@@ -7,11 +7,20 @@ Narraiva DSH is an open-source, local-first long-form fiction writing profile fo
 The current Spike proves a small but intentional boundary:
 
 - a separate Narraiva DSH profile/bundle;
-- a local `Narraiva 创作模式` agent preset;
+- local `Narraiva Ask` and `Narraiva Write` agent presets;
 - an author-control prompt policy;
 - no shell, generic filesystem, or direct manuscript-write tool in the writer preset.
 
-It does **not** yet include the Narraiva writing workbench, project persistence, Diff review, Storybase, Stylebase, or a production installer. The model can temporarily support long-form creative work in the DSH chat surface, but Draft output remains prose-only until the Proposal/Diff slice exists.
+It does **not** yet include the Narraiva writing workbench, project persistence, Diff review, Storybase, Stylebase, or a production installer. The model can temporarily support long-form creative work in the DSH chat surface, but Write output remains prose-only until the Proposal/Diff slice exists.
+
+### Modes
+
+Create a fresh DSH conversation and select its agent preset:
+
+- `Narraiva Ask` — questions, analysis, story diagnosis, and clarification. It does not generate ready-to-apply manuscript prose.
+- `Narraiva Write` — creates one reviewable Proposal with intent, scope, rationale, and proposed text. It never applies or saves that text.
+
+The selected preset is attached to the DSH session, so a conversation retains its mode instead of inferring a silent switch from a prompt.
 
 ## Local development
 
@@ -32,7 +41,7 @@ pnpm run start:spike
 The first run adds this local package to the Harness profile `narraiva-web` and opens the Web surface at `http://127.0.0.1:3081`.
 
 To use a different Harness checkout, set `DSH_SOURCE` before starting. To use a different Harness home, set `DSH_HOME` before bootstrapping. If the shell that runs pnpm does not select Node 24+, set `DSH_NODE` to its Node 24+ executable.
-The bootstrap command will not overwrite a locally edited Narraiva preset; use `pnpm run bootstrap -- --force` only when deliberately replacing it. The starter disables DSH telemetry by default for this local Spike.
+The bootstrap command adds missing presets and preserves locally edited ones; use `pnpm run bootstrap -- --force` only when deliberately replacing them. The starter disables DSH telemetry by default for this local Spike.
 
 ## Data boundary
 
@@ -41,7 +50,7 @@ Projects, sessions, and the DeepSeek credential are local to the user's Harness 
 ## Planned slices
 
 1. Narraiva root UI: project picker, chapter tree, editor, assistant dock.
-2. Proposal/Diff: Think/Draft, review, accept/reject, local revision history.
+2. Proposal/Diff: Ask/Write, review, accept/reject, local revision history.
 3. Storybase Lite: candidate-first facts, evidence, canonical confirmation, bounded retrieval.
 4. Optional local retrieval and Stylebase experiments.
 

@@ -5,6 +5,7 @@ import path from 'node:path'
 import test from 'node:test'
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const { listNarraivaModes, resolveNarraivaMode } = await import('../src/modes.js')
 
 async function read(relativePath) {
   return await readFile(path.join(repositoryRoot, relativePath), 'utf8')
@@ -48,4 +49,36 @@ test('package exposes a profile-composition verification command', async () => {
   const manifest = JSON.parse(await read('package.json'))
 
   assert.equal(manifest.scripts['verify:profile'], 'node scripts/verify-profile-composition.mjs')
+})
+
+test('Ask and Write have one stable mode interface and distinct DSH presets', () => {
+  assert.deepEqual(listNarraivaModes(), [
+    {
+      id: 'ask',
+      agentPreset: 'narraiva-ask',
+      label: 'Narraiva Ask',
+      purpose: '讨论、分析与澄清',
+    },
+    {
+      id: 'write',
+      agentPreset: 'narraiva-writer',
+      label: 'Narraiva Write',
+      purpose: '生成作者可审阅的写作 Proposal',
+    },
+  ])
+  assert.equal(resolveNarraivaMode('ask').agentPreset, 'narraiva-ask')
+  assert.equal(resolveNarraivaMode('write').agentPreset, 'narraiva-writer')
+  assert.throws(() => resolveNarraivaMode('unknown'), /Unknown Narraiva mode/)
+})
+
+test('Ask and Write presets preserve their author-control distinction', async () => {
+  const ask = await read('presets/narraiva-ask/agent.cordis.yml')
+  const write = await read('presets/narraiva-writer/agent.cordis.yml')
+  const bootstrap = await read('scripts/bootstrap-local-profile.mjs')
+
+  assert.match(ask, /Narraiva Ask/)
+  assert.match(ask, /Do not produce a manuscript replacement/)
+  assert.match(write, /Narraiva Write/)
+  assert.match(write, /Proposal/)
+  assert.match(bootstrap, /narraiva-ask/)
 })

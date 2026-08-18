@@ -5,9 +5,8 @@ import { fileURLToPath } from 'node:url'
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dshHome = process.env.DSH_HOME ?? path.join(homedir(), '.dsh')
-const presetSource = path.join(repositoryRoot, 'presets', 'narraiva-writer')
-const presetTarget = path.join(dshHome, '.agent-presets', 'narraiva-writer')
 const force = process.argv.includes('--force')
+const presetIds = ['narraiva-ask', 'narraiva-writer']
 
 async function pathExists(target) {
   try {
@@ -18,15 +17,22 @@ async function pathExists(target) {
   }
 }
 
-if (await pathExists(presetTarget) && !force) {
-  throw new Error(
-    `Refusing to replace an existing writer preset at ${presetTarget}. `
-      + 'Run "pnpm run bootstrap -- --force" only if you intend to replace it.',
-  )
+const presetRoot = path.join(dshHome, '.agent-presets')
+await mkdir(presetRoot, { recursive: true })
+const installed = []
+const skipped = []
+
+for (const presetId of presetIds) {
+  const presetSource = path.join(repositoryRoot, 'presets', presetId)
+  const presetTarget = path.join(presetRoot, presetId)
+  if (await pathExists(presetTarget) && !force) {
+    skipped.push(presetId)
+    continue
+  }
+  await cp(presetSource, presetTarget, { recursive: true, force })
+  installed.push(presetId)
 }
 
-await mkdir(path.dirname(presetTarget), { recursive: true })
-await cp(presetSource, presetTarget, { recursive: true, force })
-
-console.log(`Installed Narraiva writer preset: ${presetTarget}`)
+if (installed.length > 0) console.log(`Installed Narraiva presets: ${installed.join(', ')}`)
+if (skipped.length > 0) console.log(`Preserved existing local presets: ${skipped.join(', ')}`)
 console.log('Next run: pnpm run start:spike')
