@@ -1,0 +1,33 @@
+{
+  "name": "@narraiva/dsh",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Narraiva local-first long-form writing profile for DeepSeek Harness",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src",
+    "presets",
+    "scripts",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "test:contract": "node --test test/foundation-contract.test.mjs",
+    "bootstrap": "node scripts/bootstrap-local-profile.mjs",
+    "start:spike": "node scripts/start-local-spike.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

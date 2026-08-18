@@ -1,0 +1,10 @@
+# Narraiva is a profile bundle, not a modification of the DeepSeek Harness source.
+# This layer selects the local writer preset and contributes the product policy seam.
+- insert:
+    - id: narraiva-foundation
+      name: '@narraiva/dsh'
+
+- id: agent-presets
+  name: '@deepseek-ai/dsh-agent-presets'
+  config:
+    default: narraiva-writer
