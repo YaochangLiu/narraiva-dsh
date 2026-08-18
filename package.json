@@ -4,6 +4,7 @@
   "private": true,
   "description": "Narraiva local-first long-form writing profile for DeepSeek Harness",
   "type": "module",
+  "packageManager": "pnpm@11.19.0",
   "exports": {
     ".": {
       "default": "./src/index.js"
