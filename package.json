@@ -24,6 +24,7 @@
     "test": "node --test",
     "test:contract": "node --test test/foundation-contract.test.mjs",
     "bootstrap": "node scripts/bootstrap-local-profile.mjs",
+    "verify:profile": "node scripts/verify-profile-composition.mjs",
     "start:spike": "node scripts/start-local-spike.mjs"
   },
   "dsh": {

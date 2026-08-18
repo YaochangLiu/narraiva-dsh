@@ -24,6 +24,8 @@ test('Narraiva profile selects the writer preset', async () => {
   assert.match(patch, /id: agent-presets/)
   assert.match(patch, /default: narraiva-writer/)
   assert.match(patch, /@narraiva\/dsh/)
+  assert.match(patch, /id: tool-pwsh\s+disabled: true/)
+  assert.match(patch, /id: tool-fs\s+disabled: true/)
 })
 
 test('writer preset makes proposals and does not grant direct authoring tools', async () => {
@@ -39,4 +41,11 @@ test('local launcher composes the official Web bundle before Narraiva', async ()
 
   assert.match(launcher, /@deepseek-ai\/dsh-web-app/)
   assert.match(launcher, /@narraiva\/dsh/)
+  assert.doesNotMatch(launcher, /profileManifest\.dsh\.profile\.bundles\s*=/)
+})
+
+test('package exposes a profile-composition verification command', async () => {
+  const manifest = JSON.parse(await read('package.json'))
+
+  assert.equal(manifest.scripts['verify:profile'], 'node scripts/verify-profile-composition.mjs')
 })

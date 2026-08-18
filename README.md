@@ -23,14 +23,16 @@ Prerequisites:
 
 ```powershell
 cd D:\entertiment\katera\narraiva-dsh
-npm test
-npm run bootstrap
-npm run start:spike
+pnpm test
+pnpm run bootstrap
+pnpm run verify:profile
+pnpm run start:spike
 ```
 
 The first run adds this local package to the Harness profile `narraiva-web` and opens the Web surface at `http://127.0.0.1:3081`.
 
-To use a different Harness checkout, set `DSH_SOURCE` before starting. To use a different Harness home, set `DSH_HOME` before bootstrapping.
+To use a different Harness checkout, set `DSH_SOURCE` before starting. To use a different Harness home, set `DSH_HOME` before bootstrapping. If the shell that runs pnpm does not select Node 24+, set `DSH_NODE` to its Node 24+ executable.
+The bootstrap command will not overwrite a locally edited Narraiva preset; use `pnpm run bootstrap -- --force` only when deliberately replacing it. The starter disables DSH telemetry by default for this local Spike.
 
 ## Data boundary
 

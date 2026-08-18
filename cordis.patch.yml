@@ -8,3 +8,20 @@
   name: '@deepseek-ai/dsh-agent-presets'
   config:
     default: narraiva-writer
+
+# The writing Spike is deliberately chat-only. Keep the author in control
+# until Narraiva provides an explicit Proposal/Diff review surface.
+- id: tool-bash
+  disabled: true
+
+- id: tool-pwsh
+  disabled: true
+
+- id: tool-fs
+  disabled: true
+
+- id: tool-fs-search
+  disabled: true
+
+- id: tool-str-replace-editor
+  disabled: true
