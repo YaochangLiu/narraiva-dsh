@@ -21,7 +21,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "test": "node --test test/*.test.mjs",
+    "test": "node --test",
     "test:contract": "node --test test/foundation-contract.test.mjs",
     "bootstrap": "node scripts/bootstrap-local-profile.mjs",
     "start:spike": "node scripts/start-local-spike.mjs"
