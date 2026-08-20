@@ -32,4 +32,4 @@ Ask、Write 和未来的 Full Access 是三个独立模式：
 
 ## 当前阶段
 
-阶段 0 正在进行。基础 Host policy、Ask/Write presets 和无通用文件/终端工具的限制已存在；当前正在完成 [Browser Client 技术 Spike](plans/phase-0-dsh-browser-client-spike.md) 与 [客户端复用映射](architecture/desktop-ui-reuse-map.md)。
+阶段 1 已实现，正在完成真实浏览器验收。项目格式、目录授权、真实章节导航、编辑与自动保存、重启恢复和冲突保护见 [Phase 1 本地项目工作台](architecture/phase-1-local-project-workbench.md)。Phase 2 才会接入 Ask 的真实 DSH Agent 传输。
