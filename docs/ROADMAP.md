@@ -20,7 +20,7 @@ Ask、Write 和未来的 Full Access 是三个独立模式：
 | 3 | Write 与 Change Set | **已实现。** 模型只能提议；作者可逐项/批量审阅、接受、拒绝、撤销；冲突不会覆盖文件。 |
 | 3.1 | Proposal Review UI | **已实现。** 协议不进入聊天正文；Proposal 生命周期统一；Patch 在完整稿件上下文和真实 offset 中审阅、定位。 |
 | 3.2 | 统一会话模式 | **已实现。** Ask 与 Write 共享同一个 DSH Conversation；模式仅改变请求协议与审阅 UI。 |
-| 4 | 受控项目检索 | **已实现。** Ask/Write 项目检索默认关闭；开启后只索引授权根目录的受支持文本，作者逐项确认，并在 Context Receipt 中审计实际发送范围。 |
+| 4 | 受控项目检索 | **已实现。** Ask/Write 项目检索默认开启，作者可关闭；只索引授权根目录的受支持文本，作者逐项确认，并在 Context Receipt 中审计实际发送范围。 |
 | 5 | 公开 Alpha | **代码已实现。** npm 可发布包、公共 CLI、MIT 与商标文本、贡献治理、兼容性 doctor、公开文档与 CI 已完成；正式 prerelease 仍以干净 Windows + 真实 BYOK 人工证据为发布门槛。 |
 | 6A | Writing Skill Kernel | **已实现。** 十个小说方法通过 DSH 原生 catalog/loader 按需加载；确定性路由与 UI/历史回执可解释；危险工具仍关闭，Write 仍只产生 Proposal。 |
 | 6.1 | Skills 路由与 UI | **已实现。** 默认自动路由，作者可为下一次请求选择当前上下文允许的方法；方法、选择来源、上下文和输出边界在发送前可见并随历史持久。 |

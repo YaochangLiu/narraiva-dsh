@@ -16,7 +16,7 @@
 - Configure a redacted test DeepSeek credential in DSH.
 - Create/open a project, edit, autosave, and reopen.
 - Ask and Write in one conversation; inspect, reject, accept, and undo a Proposal.
-- Enable retrieval, inspect/remove evidence, send, and verify stale evidence blocks.
+- Confirm retrieval starts enabled, inspect/remove evidence, disable/re-enable it, send, and verify stale evidence blocks.
 - Restart, confirm project/review/history recovery, and confirm no Narraiva Cloud traffic.
 
 Automated success does not substitute for this human journey. Record the tested package tarball hash, DSH version, Node version, browser, Windows version, and any skipped model-provider evidence before creating a GitHub prerelease.

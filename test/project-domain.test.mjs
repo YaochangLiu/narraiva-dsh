@@ -17,7 +17,12 @@ test('creates a versioned Narraiva project with one manuscript', () => {
   assert.equal(manifest.name, 'The Zero Crown')
   assert.equal(manifest.documents[0].path, 'manuscript/chapter_001.md')
   assert.equal(manifest.activeDocumentId, manifest.documents[0].id)
-  assert.equal(manifest.retrieval.enabled, false)
+  assert.equal(manifest.retrieval.enabled, true)
+})
+
+test('defaults legacy projects without a retrieval preference to enabled', () => {
+  const manifest = parseProjectManifest(JSON.stringify({ version: 1, id: 'project-1', name: 'Novel', documents: [{ id: 'doc-1', title: 'Chapter 1', path: 'manuscript/chapter_001.md', order: 0 }], activeDocumentId: 'doc-1', createdAt: 1, updatedAt: 1 }))
+  assert.equal(manifest.retrieval.enabled, true)
 })
 
 test('rejects absolute and escaping document paths', () => {
