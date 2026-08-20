@@ -32,4 +32,4 @@ Ask、Write 和未来的 Full Access 是三个独立模式：
 
 ## 当前阶段
 
-阶段 1 已实现，正在完成真实浏览器验收。项目格式、目录授权、真实章节导航、编辑与自动保存、重启恢复和冲突保护见 [Phase 1 本地项目工作台](architecture/phase-1-local-project-workbench.md)。Phase 2 才会接入 Ask 的真实 DSH Agent 传输。
+阶段 2 已实现并完成真实 DSH/DeepSeek 垂直验证。Ask 的会话、显式上下文、流式回答、停止、重试、项目级历史与 BYOK 边界见 [Phase 2 Ask 垂直切片](architecture/phase-2-ask-vertical-slice.md)。下一阶段是 Write 与 Change Set。

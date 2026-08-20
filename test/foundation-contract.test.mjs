@@ -67,6 +67,7 @@ test('Browser Client is a formally declared DSH web entry with a distributable b
     '@deepseek-ai/dsh-client-runtime',
     '@deepseek-ai/dsh-client-connection',
     '@deepseek-ai/dsh-client-ui-layout',
+    '@deepseek-ai/dsh-client-ui-conversation',
   ])
   assert.match(bundle, /__ModuleLoader__\.load/)
   assert.match(bundle, /@narraiva\/dsh/)
@@ -96,7 +97,7 @@ test('Browser Client bundle registers one DSH factory with the expected public c
     assert.equal(specifier, 'react')
     return { createElement: () => null, useState: () => ['ask', () => {}], useSyncExternalStore: () => 'unavailable' }
   })
-  assert.deepEqual([...client.inject], ['slots', 'connection'])
+  assert.deepEqual([...client.inject], ['slots', 'connection', 'sessions'])
   assert.equal(typeof client.apply, 'function')
 
   let injectedSlot

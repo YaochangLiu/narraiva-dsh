@@ -1,6 +1,8 @@
 const React = require('react')
 const { NarraivaProjectAdapter } = require('./project-adapter.cjs')
 const { addDocument, removeDocument, renameDocument, reorderDocument } = require('./project-domain.cjs')
+const { buildAskPrompt, buildContextReceipt } = require('./ask-context.cjs')
+const { NarraivaConversationAdapter } = require('./conversation-adapter.cjs')
 
 const PLUGIN_ID = '@narraiva/dsh'
 const MODES = Object.freeze([
@@ -19,9 +21,12 @@ const narraivaStyles = `
   .nv-statusbar { gap:24px; padding:0 18px; border-top:1px solid var(--nv-border); color:var(--nv-muted); font-size:11px; }.nv-statusbar span:last-child { margin-left:auto; }
   @media (max-width:900px) { .nv-workbench { grid-template-columns:208px minmax(0,1fr); }.nv-assistant { display:none; } } @media (max-width:620px) { .nv-workbench { grid-template-columns:1fr; }.nv-sidebar { display:none; }.nv-editor { padding:48px 25px; }.nv-statusbar { gap:12px; }.nv-statusbar span:nth-child(2) { display:none; } }
   .nv-welcome{grid-column:1/-1;display:grid;place-items:center;background:var(--nv-editor);padding:32px}.nv-welcome-card{width:min(560px,100%);padding:44px;border:1px solid var(--nv-border);border-radius:16px;background:var(--nv-elevated);box-shadow:0 18px 60px rgba(73,55,39,.08)}.nv-welcome-card h1{margin:0 0 10px;font:700 38px/1 Georgia,serif}.nv-welcome-card p{color:var(--nv-secondary);line-height:1.7}.nv-welcome-actions{display:flex;gap:10px;margin-top:28px}.nv-primary,.nv-secondary{min-height:38px;padding:0 16px;border:1px solid var(--nv-border);border-radius:9px;background:white;color:var(--nv-text);cursor:pointer}.nv-primary{border-color:var(--nv-accent);background:var(--nv-accent);color:white}.nv-error{margin-top:16px;padding:10px 12px;border-radius:8px;background:#fff0eb;color:#9d412e;font-size:12px}.nv-editor{display:flex;flex-direction:column;padding:0}.nv-editor-head{display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 22px;border-bottom:1px solid var(--nv-border);color:var(--nv-secondary);font-size:12px}.nv-editor-surface{position:relative;flex:1;min-height:0;display:grid;grid-template-columns:52px minmax(0,1fr);overflow:auto;background:var(--nv-editor)}.nv-lines{padding:35px 10px;text-align:right;color:var(--nv-muted);font:13px/1.9 "SFMono-Regular",Consolas,monospace;white-space:pre;border-right:1px solid #f1ece5;user-select:none}.nv-manuscript{width:100%;min-height:100%;padding:34px 42px;border:0;outline:0;resize:none;background:transparent;color:#252321;font:16px/1.9 "SFMono-Regular",Consolas,monospace;tab-size:2}.nv-chapter-row{display:flex;align-items:center;margin:3px 8px;border-radius:7px}.nv-chapter-row.is-active{background:var(--nv-accent-soft);border-left:3px solid var(--nv-accent)}.nv-chapter-row .nv-chapter{flex:1;width:auto;margin:0}.nv-mini{border:0;background:transparent;color:var(--nv-muted);cursor:pointer;padding:5px}.nv-project::after{content:attr(data-project-name)}.nv-conflict{padding:8px 18px;background:#fff3e5;color:#914f1d;font-size:12px;border-bottom:1px solid #ebd0b6}.nv-save-error{color:#a13f32}.nv-busy{opacity:.65;pointer-events:none}
+  .nv-assistant-head{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--nv-border)}.nv-conversation-select{min-width:0;flex:1;height:34px;border:1px solid var(--nv-border);border-radius:8px;background:var(--nv-editor);padding:0 8px}.nv-chat{flex:1;min-height:0;overflow:auto;padding:14px}.nv-chat-empty{display:grid;height:100%;place-content:center;color:var(--nv-muted);text-align:center;line-height:1.7}.nv-message{max-width:92%;margin:0 0 12px;padding:10px 12px;border-radius:11px;white-space:pre-wrap;font-size:13px;line-height:1.65}.nv-message.user{margin-left:auto;background:var(--nv-accent-soft);color:#503524}.nv-message.assistant{background:var(--nv-elevated);border:1px solid var(--nv-border)}.nv-message.error{border-color:#e5b6a6;background:#fff3ef;color:#8d3d2b}.nv-message.streaming::after{content:'▋';color:var(--nv-accent);animation:nv-blink 1s infinite}.nv-context-row{display:flex;gap:6px;align-items:center;margin:0 14px 8px;color:var(--nv-muted);font-size:11px}.nv-context-chip{border:1px solid var(--nv-border);border-radius:999px;padding:4px 8px;background:var(--nv-editor);color:var(--nv-secondary)}.nv-context-chip.off{text-decoration:line-through;opacity:.55}.nv-composer textarea:disabled{opacity:.55}.nv-composer-error{margin:0 14px 8px;color:#9d412e;font-size:11px}.nv-stop{background:#8f6047}.nv-privacy{margin-top:6px;color:var(--nv-muted);font-size:10px;line-height:1.4}@keyframes nv-blink{50%{opacity:0}}
+  .nv-receipt{display:block;margin-top:6px;color:var(--nv-muted);font-size:9px}.nv-markdown p{margin:0 0 8px}.nv-markdown p:last-child{margin-bottom:0}.nv-markdown pre{overflow:auto;padding:8px;border-radius:7px;background:#f2eee8;white-space:pre-wrap;font:11px/1.5 Consolas,monospace}.nv-markdown strong{font-weight:700}
 `
 
 function h(type, props, ...children) { return React.createElement(type, props, ...children) }
+function renderMessage(message) { if (message.role !== 'assistant') return [message.content, message.contextSummary && h('small', { className: 'nv-receipt', key: 'receipt' }, `已发送：${message.contextSummary}`)]; const parts = String(message.content || '').split(/(```[\s\S]*?```)/g); return h('div', { className: 'nv-markdown' }, parts.filter(Boolean).map((part, index) => part.startsWith('```') ? h('pre', { key: index }, part.replace(/^```[^\n]*\n?|```$/g, '')) : h('p', { key: index }, part.replace(/\*\*/g, '')))) }
 
 function installStyles() {
   if (typeof document === 'undefined') return
@@ -100,41 +105,57 @@ function ManuscriptEditor({ document, content, onChange, onSelection, saveState,
     ))
 }
 
-function AssistantPanel({ connectionState, mode, onModeChange }) {
-  const selected = MODES.find(candidate => candidate.id === mode) ?? MODES[0]
+function AssistantPanel({ connectionState, mode, onModeChange, runtime, manifest, onManifest, document, content, revision, selection }) {
+  const [messages, setMessages] = React.useState([])
+  const [input, setInput] = React.useState('')
+  const [sessionId, setSessionId] = React.useState(manifest.conversation?.activeId || null)
+  const [running, setRunning] = React.useState(false)
+  const [error, setError] = React.useState('')
+  const [includeCurrent, setIncludeCurrent] = React.useState(true)
+  const [view, setView] = React.useState('conversation')
+  const [hasMore, setHasMore] = React.useState(false)
+  const [loadingOlder, setLoadingOlder] = React.useState(false)
+  const lastInput = React.useRef('')
+  React.useEffect(() => { let dispose = () => {}; let live = true; (async () => { try { const opened = await runtime.conversation.ensureProjectSession(manifest); if (!live) return; setSessionId(opened.sessionId); if (opened.manifest !== manifest) await onManifest(opened.manifest); dispose = runtime.conversation.subscribe(opened.sessionId, state => { setMessages(state.messages); setRunning(state.running); setHasMore(state.hasMore); setLoadingOlder(state.loadingOlder); const lastUser = [...state.messages].reverse().find(item => item.role === 'user'); if (lastUser) lastInput.current = lastUser.content; const last = state.messages[state.messages.length - 1]; if (state.promptError) setError(state.promptError.message || 'DSH 请求失败。'); else if (last?.status === 'error') setError(last.content); else if (!state.running) setError('') }) } catch (cause) { if (live) setError(cause?.message || '无法打开 DSH 对话。') } })(); return () => { live = false; dispose() } }, [manifest.id, manifest.conversation?.activeId])
+  async function send(value = input) { if (!sessionId || running || mode !== 'ask') return; setError(''); try { const receipt = buildContextReceipt({ document, content, revision, selection, input: value, includeCurrent }); const prompt = buildAskPrompt({ input: value, receipt, content, selection }); lastInput.current = value; setInput(''); await runtime.conversation.send(sessionId, prompt) } catch (cause) { setError(cause?.message || '发送失败。') } }
+  async function createConversation() { try { const opened = await runtime.conversation.createProjectSession(manifest); await onManifest(opened.manifest); setSessionId(opened.sessionId) } catch (cause) { setError(cause?.message || '无法新建对话。') } }
+  async function switchConversation(id) { try { const next = runtime.conversation.openProjectSession(manifest, id); await onManifest(next); setSessionId(id) } catch (cause) { setError(cause?.message || '无法切换对话。') } }
+  async function stop() { try { await runtime.conversation.cancel(sessionId) } catch (cause) { setError(cause?.message || '停止失败。') } }
+  async function loadOlder() { try { await runtime.conversation.loadOlder(sessionId) } catch (cause) { setError(cause?.message || '无法加载更早消息。') } }
+  const conversations = runtime.conversation.listProjectSessions(manifest)
   return h('aside', { className: 'nv-assistant', 'aria-label': 'Narraiva 助手' },
     h('div', { className: 'nv-mode-switch', role: 'tablist', 'aria-label': '助手视图' },
-      h('button', { className: 'nv-mode is-active', type: 'button', role: 'tab', 'aria-selected': true }, '对话'),
-      h('button', { className: 'nv-mode', type: 'button', role: 'tab', 'aria-selected': false }, '历史'),
+      h('button', { className: `nv-mode${view === 'conversation' ? ' is-active' : ''}`, type: 'button', role: 'tab', 'aria-selected': view === 'conversation', onClick: () => setView('conversation') }, '对话'),
+      h('button', { className: `nv-mode${view === 'history' ? ' is-active' : ''}`, type: 'button', role: 'tab', 'aria-selected': view === 'history', onClick: () => setView('history') }, '历史'),
     ),
+    h('div', { className: 'nv-assistant-head' }, h('select', { className: 'nv-conversation-select', value: sessionId || '', onChange: event => switchConversation(event.target.value), 'aria-label': '当前对话' }, conversations.map((item, index) => h('option', { value: item.id, key: item.id }, item.title || `Conversation ${index + 1}`))), h('button', { className: 'nv-secondary', onClick: createConversation }, '新建')),
     h('div', { className: 'nv-connection', 'data-testid': 'narraiva-connection-state', 'data-state': connectionState },
       h('i', { className: `nv-dot is-${connectionState}` }),
-      connectionCopy(connectionState),
+      `${connectionCopy(connectionState)} · Ask 只读`,
     ),
-    h('div', { className: 'nv-assistant-empty' },
-      h('div', null, h('span', null, '@选中文本　'), '只有在编辑器确实把选区传给我时才有效；聊天里显示了文字，不代表我已经取得实际选中文本。'),
-      h('p', null, '“当前章节”将由编辑器提供活动文件；如果文件状态不同步，就可能出现章节编号对不上的情况。'),
-      h('p', null, '我不能假装已经看到没有被工具读取到的原文。当前在只读分析模式，不能直接把修改写回正式稿件。'),
-      h('p', null, h('strong', null, 'Narraiva 的目标不是单纯润色，而是有项目记忆、有原文证据、并且不会擅自改稿件的编辑工作台。')),
-      h('p', null, `当前模式：${selected.description}。当前阶段先完成本地项目与编辑器，Agent 发送将在下一阶段接入。`),
-    ),
-    h('div', { className: 'nv-composer', 'aria-label': '助手输入框技术预览' },
-      h('textarea', { disabled: true, value: '询问当前正文、大纲或故事记忆…', readOnly: true }),
+    h('div', { className: 'nv-chat', 'aria-live': 'polite' },
+      view === 'history' && hasMore && h('button', { className: 'nv-secondary', disabled: loadingOlder, onClick: loadOlder }, loadingOlder ? '正在加载…' : '加载更早消息'),
+      messages.length === 0 ? h('div', { className: 'nv-chat-empty' }, view === 'history' ? '当前项目还没有历史消息。' : '询问当前正文，或先在编辑器中选择文本后使用 @选中文本。') : messages.map(message => h('div', { key: message.id, className: `nv-message ${message.role} ${message.status}` }, message.content ? renderMessage(message) : (message.status === 'streaming' ? '正在思考…' : '')))),
+    error && h('div', { className: 'nv-composer-error' }, error, lastInput.current && h('button', { className: 'nv-mini', onClick: () => send(lastInput.current) }, '重试')),
+    h('div', { className: 'nv-context-row' }, h('button', { className: `nv-context-chip${includeCurrent ? '' : ' off'}`, onClick: () => setIncludeCurrent(value => !value), title: '点击移除或恢复默认上下文' }, `${includeCurrent ? '✓' : '＋'} 当前章节 · ${document?.title || '未选择'}`), selection && h('span', { className: 'nv-context-chip' }, `选区 ${selection.length} 字`)),
+    h('div', { className: 'nv-composer', 'aria-label': 'Ask 输入框' },
+      h('textarea', { disabled: running || mode !== 'ask', value: input, placeholder: mode === 'write' ? 'Write 与 Change Set 将在 Phase 3 开放' : '询问当前正文，或输入 @选中文本…', onChange: event => setInput(event.target.value), onKeyDown: event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); send() } } }),
       h('div', { className: 'nv-composer-foot' },
-        h('span', null, '仅本地 DSH'),
+        h('span', null, 'DeepSeek BYOK'),
         MODES.map(candidate => h('button', {
-          className: `nv-mode${candidate.id === selected.id ? ' is-active' : ''}`,
+          className: `nv-mode${candidate.id === mode ? ' is-active' : ''}`,
           type: 'button', key: candidate.id, onClick: () => onModeChange(candidate.id),
         }, candidate.label)),
-        h('button', { className: 'nv-send', type: 'button', disabled: true, 'aria-label': '发送' }, '发送'),
+        running ? h('button', { className: 'nv-send nv-stop', type: 'button', onClick: stop, 'aria-label': '停止生成' }, '停止') : h('button', { className: 'nv-send', type: 'button', disabled: !input.trim() || mode !== 'ask', onClick: () => send(), 'aria-label': '发送' }, '发送'),
       ),
+      h('div', { className: 'nv-privacy' }, '本次内容直接通过本地 DSH 发送给你配置的 DeepSeek 服务，不会发送给 Narraiva。'),
     ),
   )
 }
 
 function NarraivaStatusBar({ connectionState }) {
   return h('footer', { className: 'nv-statusbar' },
-    h('span', null, '技术 Spike'),
+    h('span', null, 'Phase 2 · Ask'),
     h('span', null, '默认模式：Ask'),
     h('span', null, connectionCopy(connectionState)),
   )
@@ -153,7 +174,8 @@ function NarraivaRoot({ runtime }) {
   const [adapter, setAdapter] = React.useState(null)
   const [manifest, setManifest] = React.useState(null)
   const [content, setContent] = React.useState('')
-  const [, setRevision] = React.useState(null)
+  const [revision, setRevision] = React.useState(null)
+  const [selection, setSelection] = React.useState('')
   const [saveState, setSaveState] = React.useState('saved')
   const [conflict, setConflict] = React.useState(false)
   const [error, setError] = React.useState('')
@@ -170,29 +192,31 @@ function NarraivaRoot({ runtime }) {
   React.useEffect(() => { recalledHandle().then(setRestoreHandle) }, [])
   async function loadProject(next) { setAdapter(next); setManifest(next.manifest); setError(''); await rememberHandle(next.root); const id = next.manifest.activeDocumentId; if (id) await selectDocument(next, next.manifest, id) }
   async function saveDraft(targetAdapter, document, value, generation) { let succeeded = true; saveQueue.current = saveQueue.current.then(async () => { setSaveState('saving'); try { const saved = await targetAdapter.saveDocument(document.path, value, revisionRef.current); revisionRef.current = saved.revision; setRevision(saved.revision); savedGeneration.current = Math.max(savedGeneration.current, generation); if (editGeneration.current === generation) setSaveState('saved'); else setSaveState('dirty') } catch (cause) { succeeded = false; if (cause?.code === 'WRITE_CONFLICT') setConflict(true); setSaveState('error'); setError(cause?.message || '保存失败。') } }); await saveQueue.current; return succeeded }
-  async function selectDocument(targetAdapter, targetManifest, id) { clearTimeout(saveTimer.current); if (adapter && manifest && editGeneration.current > savedGeneration.current) { const current = manifest.documents.find(item => item.id === manifest.activeDocumentId); if (current && !await saveDraft(adapter, current, contentRef.current, editGeneration.current)) return } await saveQueue.current; const doc = targetManifest.documents.find(item => item.id === id); if (!doc) return; const loaded = await targetAdapter.readDocument(doc.path); const next = { ...targetManifest, activeDocumentId: id }; if (next.activeDocumentId !== targetAdapter.manifest.activeDocumentId) await targetAdapter.saveManifest(next); setManifest(next); contentRef.current = loaded.content; setContent(loaded.content); revisionRef.current = loaded.revision; setRevision(loaded.revision); editGeneration.current = 0; savedGeneration.current = 0; setSaveState('saved'); setConflict(false); setError('') }
+  async function selectDocument(targetAdapter, targetManifest, id) { clearTimeout(saveTimer.current); if (adapter && manifest && editGeneration.current > savedGeneration.current) { const current = manifest.documents.find(item => item.id === manifest.activeDocumentId); if (current && !await saveDraft(adapter, current, contentRef.current, editGeneration.current)) return } await saveQueue.current; const doc = targetManifest.documents.find(item => item.id === id); if (!doc) return; const loaded = await targetAdapter.readDocument(doc.path); const next = { ...targetManifest, activeDocumentId: id }; if (next.activeDocumentId !== targetAdapter.manifest.activeDocumentId) await targetAdapter.saveManifest(next); setManifest(next); contentRef.current = loaded.content; setContent(loaded.content); setSelection(''); revisionRef.current = loaded.revision; setRevision(loaded.revision); editGeneration.current = 0; savedGeneration.current = 0; setSaveState('saved'); setConflict(false); setError('') }
   async function choose(create) { setBusy(true); setError(''); try { const handle = await showDirectoryPicker({ mode: 'readwrite' }); const next = create ? await NarraivaProjectAdapter.create(handle, prompt('项目名称', handle.name) || handle.name) : await NarraivaProjectAdapter.open(handle); await loadProject(next) } catch (cause) { if (cause?.name !== 'AbortError') setError(cause?.message || '无法打开本地项目。') } finally { setBusy(false) } }
   async function restore() { setBusy(true); setError(''); try { const permission = await restoreHandle.requestPermission?.({ mode: 'readwrite' }) || await restoreHandle.queryPermission?.({ mode: 'readwrite' }); if (permission !== 'granted') throw new Error('没有获得本地项目的读写权限。'); await loadProject(await NarraivaProjectAdapter.open(restoreHandle)) } catch (cause) { setError(cause?.message || '无法恢复本地项目。') } finally { setBusy(false) } }
   function changeContent(value) { contentRef.current = value; const generation = ++editGeneration.current; setContent(value); setSaveState('dirty'); setError(''); clearTimeout(saveTimer.current); saveTimer.current = setTimeout(async () => { const doc = manifest.documents.find(item => item.id === manifest.activeDocumentId); if (doc) await saveDraft(adapter, doc, value, generation) }, 700) }
   React.useEffect(() => () => clearTimeout(saveTimer.current), [])
   async function updateManifest(next) { setManifest(next); const current = next.documents.find(item => item.id === next.activeDocumentId); if (!current) { clearTimeout(saveTimer.current); contentRef.current = ''; setContent(''); revisionRef.current = null; setRevision(null); editGeneration.current = 0; savedGeneration.current = 0; setSaveState('saved'); return } if (current.id !== manifest.activeDocumentId) await selectDocument(adapter, next, current.id) }
+  async function persistConversationManifest(next) { await adapter.saveManifest(next); setManifest(next) }
   return h('main', { className: 'narraiva-spike', 'data-testid': 'narraiva-root', 'data-mode': mode },
     h(NarraivaTitleBar, { projectName: manifest?.name }),
     h('section', { className: 'nv-workbench', 'aria-label': 'Narraiva 写作工作台技术预览' },
       !manifest ? h(Welcome, { onCreate: () => choose(true), onOpen: () => choose(false), onRestore: restore, canRestore: Boolean(restoreHandle), error, busy }) : [
             h(ProjectNavigator, { key: 'nav', manifest, adapter, onManifest: updateManifest, onSelect: id => selectDocument(adapter, manifest, id), onError: setError }),
-        h(ManuscriptEditor, { key: 'editor', document: manifest.documents.find(item => item.id === manifest.activeDocumentId), content, onChange: changeContent, onSelection: () => {}, saveState, conflict, error }),
-        h(AssistantPanel, { key: 'assistant', connectionState, mode, onModeChange: setMode }),
+        h(ManuscriptEditor, { key: 'editor', document: manifest.documents.find(item => item.id === manifest.activeDocumentId), content, onChange: changeContent, onSelection: setSelection, saveState, conflict, error }),
+        h(AssistantPanel, { key: 'assistant', connectionState, mode, onModeChange: setMode, runtime, manifest, onManifest: persistConversationManifest, document: manifest.documents.find(item => item.id === manifest.activeDocumentId), content, revision, selection }),
       ],
     ),
     h(NarraivaStatusBar, { connectionState }),
   )
 }
 
-const inject = ['slots', 'connection']
+const inject = ['slots', 'connection', 'sessions']
 function apply(ctx) {
   const connection = typeof ctx.get === 'function' ? ctx.get('connection') : undefined
-  const runtime = Object.freeze({ connection: sourceFor(connection), modes: MODES, defaultMode: 'ask' })
+  const sessions = typeof ctx.get === 'function' ? ctx.get('sessions') : undefined
+  const runtime = Object.freeze({ connection: sourceFor(connection), conversation: new NarraivaConversationAdapter({ sessions, api: connection?.api }), modes: MODES, defaultMode: 'ask' })
   ctx.slots.inject('shell.overlay', () => ctx.slots.register({
     name: 'shell.overlay',
     id: 'narraiva-workbench',
