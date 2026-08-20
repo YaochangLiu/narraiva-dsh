@@ -11,6 +11,7 @@ test('public alpha package is publishable, licensed, and exposes a CLI', async (
   const manifest = JSON.parse(await read('package.json'))
   assert.equal(manifest.version, '0.1.0-alpha.1')
   assert.equal(manifest.private, false)
+  assert.equal(manifest.scripts.prepack, 'pnpm run build:client')
   assert.equal(manifest.license, 'MIT')
   assert.equal(manifest.publishConfig.access, 'public')
   assert.equal(manifest.bin['narraiva-dsh'], './scripts/cli.mjs')

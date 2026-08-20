@@ -47,6 +47,7 @@
     "test:contract": "node --test test/foundation-contract.test.mjs",
     "build:client": "node scripts/build-client.mjs",
     "pretest": "pnpm run build:client",
+    "prepack": "pnpm run build:client",
     "bootstrap": "node scripts/bootstrap-local-profile.mjs",
     "verify:profile": "node scripts/verify-profile-composition.mjs",
     "start:spike": "node scripts/start-local-spike.mjs",

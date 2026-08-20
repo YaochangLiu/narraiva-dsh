@@ -10,6 +10,8 @@ The source and tests in this repository were authored for the Narraiva DSH proje
 
 No Desktop React or Electron source file is copied into the Public Alpha tarball. No Electron bridge, Narraiva Cloud client, account implementation, proprietary Storybase/Stylebase engine, logo binary, font file, or manuscript fixture from the Desktop repository is included in the npm package.
 
+Phase 6A maps the product vocabulary and small method contracts from `NovelOS-alpha/packages/agent/skills.py` and its ten `packages/agent/markdown_skills/*.md` entries into independently expanded DSH instructions under `presets/narraiva-conversation/skills/*/SKILL.md`. The repository owner controls both source repositories. The DSH files were newly authored for the public plugin: they add DSH-required descriptions, explicit Ask/Write protocol markers, Proposal-only safety language, closed-evidence rules, and fiction-specific method guidance. No Python registry, planner, runtime, Storybase, Stylebase, prompt implementation, or private engine code was copied. The file-name mapping is one-to-one for `active-revision-refine`, `agent-respond`, `ai-flavor-reduction`, `continue-at-cursor`, `diagnostic-chapter`, `diagnostic-selection`, `revision-explain`, `second-direction-write`, `selection-rewrite`, and `short-selection-rewrite`.
+
 The repository owner selected MIT for the Public Alpha source. Contributors are told in `CONTRIBUTING.md` that accepted contributions use the same license. Narraiva names and product identity remain outside the code license under `TRADEMARKS.md`.
 
 ## External implementation

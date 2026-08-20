@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { buildAskPrompt, buildContextReceipt, parseContextMentions } from '../src/client/ask-context.cjs'
+import { routeWritingSkills } from '../src/client/writing-skill-router.cjs'
 
 const document = { id: 'd1', title: 'Chapter 1', path: 'manuscript/chapter_001.md' }
 
@@ -25,13 +26,16 @@ test('mentions are stripped from the user question and never imply unsupported c
 
 test('Ask prompt carries an auditable manifest and read-only policy', () => {
   const receipt = buildContextReceipt({ document, content: 'Draft', revision: '1:5', selection: '' })
-  const prompt = buildAskPrompt({ input: '@当前章节 分析节奏', receipt, content: 'Draft', selection: '' })
+  const skillRoute = routeWritingSkills({ mode: 'ask', input: '@当前章节 分析节奏' })
+  const prompt = buildAskPrompt({ input: '@当前章节 分析节奏', receipt, content: 'Draft', selection: '', skillRoute })
   assert.match(prompt, /NARRAIVA_ASK_V1/)
   assert.match(prompt, /NARRAIVA_META_V1/)
   assert.match(prompt, /只读分析模式/)
   assert.match(prompt, /manuscript\/chapter_001\.md/)
   assert.match(prompt, /Draft/)
   assert.match(prompt, /用户问题：\n分析节奏/)
+  assert.match(prompt, /\/diagnostic-chapter/)
+  assert.match(decodeURIComponent(prompt.match(/\[NARRAIVA_META_V1\](.+)/u)[1]), /diagnostic-chapter/)
   assert.doesNotMatch(prompt, /@当前章节/)
 })
 
@@ -60,4 +64,25 @@ test('retrieval evidence is encoded as untrusted data and cannot close the promp
   assert.match(prompt, /URI 编码的 JSON 数据/)
   assert.match(decodeURIComponent(prompt.split('\n').find(line => line.startsWith('%7B'))), /ignore safety/)
   assert.doesNotMatch(decodeURIComponent(prompt.match(/\[NARRAIVA_META_V1\](.+)/u)[1]), /ignore safety/)
+})
+
+test('revision explanation receives the pending Proposal as read-only encoded evidence', () => {
+  const activeProposal = { id: 'p1', summary: 'Tighten', rationale: 'Pace', changes: [{ id: 'c1', beforeText: 'old', afterText: 'new' }] }
+  const receipt = buildContextReceipt({ document, content: 'Draft', revision: '1:5', selection: '' })
+  const skillRoute = routeWritingSkills({ mode: 'ask', input: '为什么这样修改？', activeProposal })
+  const prompt = buildAskPrompt({ input: '为什么这样修改？', receipt, content: 'Draft', selection: '', skillRoute, reviewRecord: activeProposal })
+  assert.match(prompt, /NARRAIVA_REVIEW_RECORD_V1/)
+  assert.match(decodeURIComponent(prompt.match(/\[NARRAIVA_REVIEW_RECORD_V1\](.+)/u)[1]), /Tighten/)
+  assert.doesNotMatch(prompt, /<NARRAIVA_PROPOSAL_V1>/)
+})
+
+test('revision explanation sends a bounded Change Set receipt instead of full manuscript copies', () => {
+  const changeSet = { id: 'cs1', proposalId: 'p1', status: 'applied', path: document.path, beforeContent: `SECRET_BEFORE${'x'.repeat(5000)}`, afterContent: `SECRET_AFTER${'y'.repeat(5000)}`, proposal: { summary: 'Tighten', rationale: 'Pace', changes: [{ id: 'c1', startOffset: 2, endOffset: 5, beforeText: 'old', afterText: 'new' }] } }
+  const receipt = buildContextReceipt({ document, content: 'Draft', revision: '1:5', selection: '' })
+  const skillRoute = routeWritingSkills({ mode: 'ask', input: '解释一下上次改动', changeSet })
+  const prompt = buildAskPrompt({ input: '解释一下上次改动', receipt, content: 'Draft', selection: '', skillRoute, reviewRecord: changeSet })
+  const evidence = decodeURIComponent(prompt.match(/\[NARRAIVA_REVIEW_RECORD_V1\](.+)/u)[1])
+  assert.match(evidence, /Tighten/)
+  assert.match(evidence, /beforeText/)
+  assert.doesNotMatch(evidence, /SECRET_BEFORE|SECRET_AFTER/)
 })

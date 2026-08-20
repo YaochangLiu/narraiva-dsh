@@ -16,3 +16,15 @@
       Preserve the author's voice and agency. Distinguish supplied facts, open questions, and creative suggestions. You have no filesystem or shell authority and cannot silently retain information outside this local DSH conversation.
     complete: false
     includeRuntimeContext: true
+
+# DSH owns skill discovery and on-demand loading. This provider exposes only
+# Narraiva's bundled writing methods; it does not grant filesystem authority.
+- id: skill-filesystem
+  name: '@deepseek-ai/dsh-skill-filesystem'
+  config:
+    includeDefaultRoots: false
+    customSkillDirs:
+      - !!js "process.getBuiltinModule('node:url').fileURLToPath(new URL('skills/', baseUrl))"
+
+- id: tool-skill
+  name: '@deepseek-ai/dsh-tool-skill'

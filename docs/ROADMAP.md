@@ -22,7 +22,9 @@ Ask、Write 和未来的 Full Access 是三个独立模式：
 | 3.2 | 统一会话模式 | **已实现。** Ask 与 Write 共享同一个 DSH Conversation；模式仅改变请求协议与审阅 UI。 |
 | 4 | 受控项目检索 | **已实现。** Ask/Write 项目检索默认关闭；开启后只索引授权根目录的受支持文本，作者逐项确认，并在 Context Receipt 中审计实际发送范围。 |
 | 5 | 公开 Alpha | **代码已实现。** npm 可发布包、公共 CLI、MIT 与商标文本、贡献治理、兼容性 doctor、公开文档与 CI 已完成；正式 prerelease 仍以干净 Windows + 真实 BYOK 人工证据为发布门槛。 |
-| 后续 | Storybase Lite、本地 Companion、Full Access | 仅在前面数据边界、审阅与恢复机制已稳定后启动。 |
+| 6A | Writing Skill Kernel | **已实现。** 十个小说方法通过 DSH 原生 catalog/loader 按需加载；确定性路由与 UI/历史回执可解释；危险工具仍关闭，Write 仍只产生 Proposal。 |
+| 6B | 小说质量评测基线 | 对 persona-only 与 skill-loaded 运行固定任务集，分别记录协议通过率与人工文学质量盲评。 |
+| 后续 | Story Context Lite、Stylebase Explicit Lite、本地 Companion、Full Access | 仅在 Skills 质量基线和现有数据边界稳定后启动。 |
 
 ## 实施原则
 
@@ -34,4 +36,4 @@ Ask、Write 和未来的 Full Access 是三个独立模式：
 
 ## 当前阶段
 
-阶段 5 的代码与治理材料已完成。下一发布门槛是从 npm tarball 进行干净 Windows 安装并补齐真实 BYOK 人工流程证据；通过后发布 `v0.1.0-alpha.1` prerelease。Full Access 仍不实现。
+阶段 6A 已完成代码、契约测试与本地 profile 组合验证。下一产品阶段是 6B 小说质量评测基线；公开发布门槛仍是从 npm tarball 进行干净 Windows 安装并补齐真实 BYOK 人工流程证据。Full Access 仍不实现。
