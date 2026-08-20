@@ -24,7 +24,7 @@ Ask、Write 和未来的 Full Access 是三个独立模式：
 
 ## 实施原则
 
-1. **行为迁移，不是整包复制。** `NovelOS-alpha` 是 Narraiva 产品与 UI 的参考源；仅迁移不依赖 Electron、账户、云端或设备服务的组件、状态和领域模型。
+1. **组件级直接迁移，不是视觉仿制。** `NovelOS-alpha` 是 Narraiva 产品与 UI 的源头。布局、样式、可移植交互状态和领域模型直接迁入；仅在 Electron、账户、云端、设备和本地文件桥接的位置切换为明确的 DSH adapter。
 2. **先验证接口，再扩大 UI。** 第一个工程切片是 DSH Browser Client 运行时，而不是完整视觉重制。
 3. **本地优先、BYOK、最小发送。** 密钥仅由 DSH 管理；作品内容仅按用户可见的上下文清单直接发送给其配置的 DeepSeek 服务。
 4. **作者控制优先于自动化。** Ask 不写入；Write 只产生 Proposal；没有明确审阅与确认就不会更改稿件。
@@ -32,5 +32,4 @@ Ask、Write 和未来的 Full Access 是三个独立模式：
 
 ## 当前阶段
 
-阶段 0 正在进行。基础 Host policy、Ask/Write presets 和无通用文件/终端工具的限制已存在；下一项工作是 [Browser Client 技术 Spike](plans/phase-0-dsh-browser-client-spike.md)。
-
+阶段 0 正在进行。基础 Host policy、Ask/Write presets 和无通用文件/终端工具的限制已存在；当前正在完成 [Browser Client 技术 Spike](plans/phase-0-dsh-browser-client-spike.md) 与 [客户端复用映射](architecture/desktop-ui-reuse-map.md)。

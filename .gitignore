@@ -1,4 +1,5 @@
 node_modules/
 coverage/
 .dev-logs/
+.tmp/
 .DS_Store

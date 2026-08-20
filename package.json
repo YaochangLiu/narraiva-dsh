@@ -8,9 +8,14 @@
   "exports": {
     ".": {
       "default": "./src/index.js"
-    }
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
+    "lib",
     "src",
     "presets",
     "scripts",
@@ -23,6 +28,8 @@
   "scripts": {
     "test": "node --test",
     "test:contract": "node --test test/foundation-contract.test.mjs",
+    "build:client": "node scripts/build-client.mjs",
+    "pretest": "pnpm run build:client",
     "bootstrap": "node scripts/bootstrap-local-profile.mjs",
     "verify:profile": "node scripts/verify-profile-composition.mjs",
     "start:spike": "node scripts/start-local-spike.mjs"
@@ -30,6 +37,15 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-ui-layout"
+      ],
+      "immediately": true
     }
   }
 }

@@ -5,7 +5,6 @@
  * Writing tools, local project persistence, and browser UI arrive as separate
  * slices so an LLM never receives direct manuscript-write authority by default.
  */
-export const name = 'narraiva-foundation'
 export const inject = ['systemPrompt']
 
 export function apply(ctx) {

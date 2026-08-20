@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import test from 'node:test'
+import vm from 'node:vm'
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const { listNarraivaModes, resolveNarraivaMode } = await import('../src/modes.js')
@@ -13,18 +14,22 @@ async function read(relativePath) {
 
 test('Narraiva bundle declares an installable DSH patch layer', async () => {
   const manifest = JSON.parse(await read('package.json'))
+  const patch = await read('cordis.patch.yml')
 
   assert.equal(manifest.name, '@narraiva/dsh')
   assert.equal(manifest.dsh.bundle.patch, './cordis.patch.yml')
   assert.equal(manifest.exports['.'].default, './src/index.js')
+  assert.match(patch, /id: '@narraiva\/dsh'\s+name: '@narraiva\/dsh'/)
+  assert.equal(manifest.exports['./package.json'], './package.json')
 })
 
-test('Narraiva profile selects the writer preset', async () => {
+test('Narraiva profile defaults new sessions to Ask and keeps the upstream shell service available', async () => {
   const patch = await read('cordis.patch.yml')
 
   assert.match(patch, /id: agent-presets/)
-  assert.match(patch, /default: narraiva-writer/)
+  assert.match(patch, /default: narraiva-ask/)
   assert.match(patch, /@narraiva\/dsh/)
+  assert.doesNotMatch(patch, /id: ui-layout[\s\S]{0,120}?disabled: true/)
   assert.match(patch, /id: tool-pwsh\s+disabled: true/)
   assert.match(patch, /id: tool-fs\s+disabled: true/)
 })
@@ -49,6 +54,70 @@ test('package exposes a profile-composition verification command', async () => {
   const manifest = JSON.parse(await read('package.json'))
 
   assert.equal(manifest.scripts['verify:profile'], 'node scripts/verify-profile-composition.mjs')
+})
+
+test('Browser Client is a formally declared DSH web entry with a distributable bundle', async () => {
+  const manifest = JSON.parse(await read('package.json'))
+  const bundle = await read('lib/client.js')
+
+  assert.equal(manifest.exports['./client'].default, './lib/client.js')
+  assert.equal(manifest.dsh.client.platform, 'web')
+  assert.equal(manifest.dsh.client.immediately, true)
+  assert.deepEqual(manifest.dsh.client.inject, [
+    '@deepseek-ai/dsh-client-runtime',
+    '@deepseek-ai/dsh-client-connection',
+    '@deepseek-ai/dsh-client-ui-layout',
+  ])
+  assert.match(bundle, /__ModuleLoader__\.load/)
+  assert.match(bundle, /@narraiva\/dsh/)
+})
+
+test('Browser source remains a local, credential-free presentation layer', async () => {
+  const clientSource = await read('src/client/index.cjs')
+  const hostSource = await read('src/index.js')
+
+  assert.doesNotMatch(clientSource, /https?:\/\//i)
+  assert.doesNotMatch(clientSource, /DEEPSEEK_API_KEY|api[_-]?key|cloud/i)
+  assert.doesNotMatch(hostSource, /DEEPSEEK_API_KEY|api[_-]?key|cloud/i)
+})
+
+test('Browser Client bundle registers one DSH factory with the expected public client face', async () => {
+  const bundle = await read('lib/client.js')
+  let handoff
+  const sandbox = {
+    window: { __ModuleLoader__: { load: (value) => { handoff = value } } },
+  }
+
+  vm.runInNewContext(bundle, sandbox)
+
+  assert.equal(handoff.id, '@narraiva/dsh')
+  assert.equal(typeof handoff.factory, 'function')
+  const client = handoff.factory((specifier) => {
+    assert.equal(specifier, 'react')
+    return { createElement: () => null, useState: () => ['ask', () => {}], useSyncExternalStore: () => 'unavailable' }
+  })
+  assert.deepEqual([...client.inject], ['slots', 'connection'])
+  assert.equal(typeof client.apply, 'function')
+
+  let injectedSlot
+  let registration
+  client.apply({
+    get: (service) => service === 'connection' ? {} : undefined,
+    slots: {
+      inject: (slot, callback) => {
+        injectedSlot = slot
+        return callback()
+      },
+      register: (options, component) => {
+        registration = { options, component }
+        return () => {}
+      },
+    },
+  })
+  assert.equal(injectedSlot, 'shell.overlay')
+  assert.equal(registration.options.name, 'shell.overlay')
+  assert.equal(registration.options.id, 'narraiva-workbench')
+  assert.equal(typeof registration.component, 'function')
 })
 
 test('Ask and Write have one stable mode interface and distinct DSH presets', () => {

@@ -1,13 +1,16 @@
 # Narraiva is a profile bundle, not a modification of the DeepSeek Harness source.
-# This layer selects the local writer preset and contributes the product policy seam.
+# This layer selects the local Ask preset, contributes the product policy seam,
+# and lets Narraiva's Browser Client own the Web root.
 - insert:
-    - id: narraiva-foundation
+    # Client-module discovery keys off the Loader entry name. Use the package
+    # name as the profile id so DSH can resolve this package's dsh.client face.
+    - id: '@narraiva/dsh'
       name: '@narraiva/dsh'
 
 - id: agent-presets
   name: '@deepseek-ai/dsh-agent-presets'
   config:
-    default: narraiva-writer
+    default: narraiva-ask
 
 # The writing Spike is deliberately chat-only. Keep the author in control
 # until Narraiva provides an explicit Proposal/Diff review surface.
