@@ -21,6 +21,7 @@ function parseProposal(text, source) {
   })
   const ordered = [...normalized].sort((a, b) => a.startOffset - b.startOffset)
   if (ordered.some((item, index) => index && item.startOffset < ordered[index - 1].endOffset)) throw new NarraivaProjectError('OVERLAPPING_CHANGES', 'Proposal 包含相互重叠的修改。')
+  if (ordered.some((item, index) => index && item.startOffset === item.endOffset && item.startOffset === ordered[index - 1].startOffset && ordered[index - 1].startOffset === ordered[index - 1].endOffset)) throw new NarraivaProjectError('AMBIGUOUS_INSERTIONS', 'Proposal 不能在同一位置包含多项插入。')
   return { id: proposalId(source, match[1]), version: 1, status: 'pending', summary: String(value.summary || '写作建议'), rationale: String(value.rationale || ''), changes: normalized, source, createdAt: Date.now() }
 }
 
@@ -28,11 +29,23 @@ function materialize(content, changes) {
   return [...changes].filter(change => change.status !== 'rejected').sort((a, b) => b.startOffset - a.startOffset).reduce((next, change) => `${next.slice(0, change.startOffset)}${change.afterText}${next.slice(change.endOffset)}`, content)
 }
 function setChangeStatus(proposal, id, status) { return { ...proposal, changes: proposal.changes.map(change => change.id === id ? { ...change, status } : change) } }
+function recoverStoredProposal(stored) {
+  if (stored?.version !== 1 || !Array.isArray(stored.changes)) return null
+  try {
+    const raw = JSON.stringify({ summary: stored.summary, rationale: stored.rationale, changes: stored.changes })
+    const checked = parseProposal(`<NARRAIVA_PROPOSAL_V1>${raw}</NARRAIVA_PROPOSAL_V1>`, stored.source)
+    return { ...checked, id: stored.id, createdAt: stored.createdAt, status: stored.status, changes: checked.changes.map((change, index) => ({ ...change, status: stored.changes[index].status === 'rejected' ? 'rejected' : 'pending' })) }
+  } catch { return null }
+}
 function recoverReview(value) {
   if (!value || typeof value !== 'object') return { proposal: null, changeSet: null }
-  let proposal = null
-  try { if (value.proposal?.version === 1 && Array.isArray(value.proposal.changes)) { const raw = JSON.stringify({ summary: value.proposal.summary, rationale: value.proposal.rationale, changes: value.proposal.changes }); const checked = parseProposal(`<NARRAIVA_PROPOSAL_V1>${raw}</NARRAIVA_PROPOSAL_V1>`, value.proposal.source); proposal = { ...checked, id: value.proposal.id, createdAt: value.proposal.createdAt, changes: checked.changes.map((change, index) => ({ ...change, status: value.proposal.changes[index].status === 'rejected' ? 'rejected' : 'pending' })) } } } catch {}
-  const changeSet = value.changeSet?.proposalId && ['applied', 'rolled_back'].includes(value.changeSet.status) && typeof value.changeSet.path === 'string' ? value.changeSet : null
+  const proposal = recoverStoredProposal(value.proposal)
+  const terminal = value.changeSet
+  const safeProposal = recoverStoredProposal(terminal?.proposal)
+  const legacyUndoStatus = ['applied', 'rolled_back'].includes(terminal?.status) || (terminal?.status === 'conflicted' && terminal?.conflictOperation === 'undo')
+  const legacyUndo = legacyUndoStatus && typeof terminal?.beforeContent === 'string' && typeof terminal?.afterContent === 'string' && typeof terminal?.appliedRevision === 'string'
+  const terminalShape = terminal?.proposalId && ['applied', 'rolled_back', 'rejected', 'conflicted'].includes(terminal.status) && typeof terminal.path === 'string'
+  const changeSet = terminalShape && (safeProposal || legacyUndo) ? { ...terminal, ...(safeProposal ? { proposal: safeProposal } : {}) } : null
   return { proposal, changeSet }
 }
 

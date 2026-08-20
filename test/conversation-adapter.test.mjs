@@ -65,6 +65,54 @@ test('exposes history pagination state and maps terminal DSH errors', () => {
   assert.match(view.messages[0].content, /额度/)
 })
 
+test('projects structured Proposal envelopes as protocol items, never chat prose', () => {
+  const raw = '<NARRAIVA_PROPOSAL_V1>{"summary":"test","changes":[]}</NARRAIVA_PROPOSAL_V1>'
+  const view = projectConversationSnapshot(snapshot({ nodes: [{ kind: 'assistant', seq: 9, blocks: [{ kind: 'text', text: raw }] }] }))
+  assert.equal(view.messages[0].kind, 'proposal-protocol')
+  assert.equal(view.messages[0].content, '')
+  assert.equal(view.messages[0].protocolContent, raw)
+})
+
+test('malformed Proposal protocol is also quarantined from chat rendering', () => {
+  const raw = '<NARRAIVA_PROPOSAL_V1>{broken'
+  const view = projectConversationSnapshot(snapshot({ nodes: [{ kind: 'assistant', seq: 10, blocks: [{ kind: 'text', text: raw }] }] }))
+  assert.equal(view.messages[0].kind, 'proposal-protocol')
+  assert.equal(view.messages[0].content, '')
+})
+
+test('keeps assistant prose while removing an embedded Proposal envelope', () => {
+  const envelope = '<NARRAIVA_PROPOSAL_V1>{"summary":"test","changes":[]}</NARRAIVA_PROPOSAL_V1>'
+  const view = projectConversationSnapshot(snapshot({ nodes: [{ kind: 'assistant', seq: 11, blocks: [{ kind: 'text', text: `Here is the review.\n${envelope}` }] }] }))
+  assert.equal(view.messages[0].kind, 'message')
+  assert.equal(view.messages[0].content, 'Here is the review.')
+  assert.equal(view.messages[0].protocolContent, envelope)
+})
+
+test('quarantines a streaming Proposal after a prose preamble', () => {
+  const view = projectConversationSnapshot(snapshot({ partial: { turn: 2, step: 1, blocks: [{ kind: 'text', text: 'Here it is:\n<NARRAIVA_PROPOSAL_V1>{' }] } }))
+  assert.equal(view.messages[0].kind, 'proposal-streaming')
+  assert.doesNotMatch(view.messages[0].content, /NARRAIVA_PROPOSAL/)
+})
+
+test('quarantines malformed final protocol after prose and leaves Ask snapshots unchanged', () => {
+  const raw = 'Here it is:\n<NARRAIVA_PROPOSAL_V1>{broken'
+  const write = projectConversationSnapshot(snapshot({ nodes: [{ kind: 'assistant', seq: 12, blocks: [{ kind: 'text', text: raw }] }] }))
+  assert.equal(write.messages[0].content, 'Here it is:')
+  assert.match(write.messages[0].protocolContent, /NARRAIVA_PROPOSAL/)
+  const ask = projectConversationSnapshot(snapshot({ nodes: [{ kind: 'assistant', seq: 12, blocks: [{ kind: 'text', text: raw }] }] }), { proposalProtocol: false })
+  assert.equal(ask.messages[0].content, raw)
+  assert.equal(ask.messages[0].protocolContent, undefined)
+})
+
+test('never renders a second Proposal envelope as assistant prose', () => {
+  const one = '<NARRAIVA_PROPOSAL_V1>{"summary":"one","changes":[]}</NARRAIVA_PROPOSAL_V1>'
+  const two = '<NARRAIVA_PROPOSAL_V1>{"summary":"two","changes":[]}</NARRAIVA_PROPOSAL_V1>'
+  const view = projectConversationSnapshot(snapshot({ nodes: [{ kind: 'assistant', seq: 13, blocks: [{ kind: 'text', text: `Review:\n${one}\n${two}` }] }] }))
+  assert.equal(view.messages[0].content, 'Review:')
+  assert.doesNotMatch(view.messages[0].content, /NARRAIVA_PROPOSAL/)
+  assert.equal(view.messages[0].protocolContent, one)
+})
+
 test('binds Write to a separate fail-closed writer session', async () => {
   const rows = { byId: {} }
   const session = { getSnapshot: () => snapshot(), subscribe: () => () => {} }

@@ -42,7 +42,7 @@ class NarraivaProjectAdapter {
     const before = await this.readDocument(proposal.source.path)
     if (before.revision !== proposal.source.diskRevision) throw new NarraivaProjectError('WRITE_CONFLICT', `${proposal.source.path} 已在 Proposal 生成后发生变化，未应用修改。`)
     const saved = await this.saveDocument(proposal.source.path, nextContent, before.revision)
-    return { id: `changeset-${crypto.randomUUID()}`, proposalId: proposal.id, status: 'applied', path: proposal.source.path, beforeContent: before.content, afterContent: nextContent, beforeRevision: before.revision, appliedRevision: saved.revision, appliedAt: Date.now() }
+    return { id: `changeset-${crypto.randomUUID()}`, proposalId: proposal.id, proposal: { ...proposal, status: 'accepted' }, status: 'applied', path: proposal.source.path, beforeContent: before.content, afterContent: nextContent, beforeRevision: before.revision, appliedRevision: saved.revision, appliedAt: Date.now() }
   }
   async undoChangeSet(changeSet) {
     if (changeSet?.status !== 'applied') throw new NarraivaProjectError('INVALID_CHANGE_SET', '该 Change Set 不能撤销。')

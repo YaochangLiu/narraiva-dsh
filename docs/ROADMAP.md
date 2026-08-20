@@ -18,6 +18,7 @@ Ask、Write 和未来的 Full Access 是三个独立模式：
 | 1 | 本地项目工作台 | 创建、打开、编辑、自动保存和重启恢复在项目根目录内可靠完成。 |
 | 2 | Ask 垂直切片 | 用户在 DSH 本地配置自己的 DeepSeek Key 后，可从 Narraiva Ask 获得带显式上下文的真实回答。 |
 | 3 | Write 与 Change Set | **已实现。** 模型只能提议；作者可逐项/批量审阅、接受、拒绝、撤销；冲突不会覆盖文件。 |
+| 3.1 | Proposal Review UI | **已实现。** 协议不进入聊天正文；Proposal 生命周期统一；Patch 在完整稿件上下文和真实 offset 中审阅、定位。 |
 | 4 | 受控项目检索 | Write 的项目检索默认关闭，开启后只在项目根目录内检索，并向作者展示最终发送范围。 |
 | 5 | 公开 Alpha | npm/单命令启动、MIT 与商标文本、Windows 端到端证据和公开文档完整。 |
 | 后续 | Storybase Lite、本地 Companion、Full Access | 仅在前面数据边界、审阅与恢复机制已稳定后启动。 |
