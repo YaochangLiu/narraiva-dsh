@@ -24,7 +24,7 @@ if (result.error) throw result.error
 assert.equal(result.status, 0, result.stderr)
 assert.match(result.stdout, /@deepseek-ai\/dsh-web-app/)
 assert.match(result.stdout, /@narraiva\/dsh/)
-assert.match(result.stdout, /default: narraiva-ask/)
+assert.match(result.stdout, /default: narraiva-conversation/)
 assert.match(result.stdout, /- id: ui-layout\s+name: '@deepseek-ai\/dsh-client-ui-layout'/)
 assert.match(result.stdout, /- id: tool-pwsh[\s\S]{0,200}?disabled: true/)
 assert.match(result.stdout, /- id: tool-fs[\s\S]{0,300}?disabled: true/)

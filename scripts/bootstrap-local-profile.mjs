@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dshHome = process.env.DSH_HOME ?? path.join(homedir(), '.dsh')
 const force = process.argv.includes('--force')
-const presetIds = ['narraiva-ask', 'narraiva-writer']
+const presetIds = ['narraiva-conversation', 'narraiva-ask', 'narraiva-writer']
 
 async function pathExists(target) {
   try {

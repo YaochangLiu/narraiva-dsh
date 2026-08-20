@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { NarraivaConversationAdapter, contextSummary, displayQuestion, projectConversationSnapshot } from '../src/client/conversation-adapter.cjs'
+import { NarraivaConversationAdapter, contextSummary, displayQuestion, projectConversationSnapshot, requestUsesProposalProtocol } from '../src/client/conversation-adapter.cjs'
 
 function snapshot(overrides = {}) { return { nodes: [], partial: null, running: false, promptError: null, openState: 'open', ...overrides } }
 
@@ -21,7 +21,7 @@ test('projects DSH user, assistant, partial and error nodes into Narraiva messag
   assert.match(view.messages[0].contextSummary || '', /当前章节|^$/)
 })
 
-test('creates one project session, selects Ask preset, sends and cancels through DSH', async () => {
+test('creates one project session, selects the unified preset, sends and cancels through DSH', async () => {
   const sent = []; let cancelled = 0; const listeners = new Set()
   const session = { getSnapshot: () => snapshot(), subscribe: fn => { listeners.add(fn); return () => listeners.delete(fn) }, prompt: async content => { sent.push(content); return { ok: true, value: { accepted: true } } }, cancel: async () => { cancelled++; return { ok: true, value: { accepted: true } } } }
   const rows = { ids: [], byId: {}, current: undefined }
@@ -31,7 +31,7 @@ test('creates one project session, selects Ask preset, sends and cancels through
   const adapter = new NarraivaConversationAdapter({ sessions, api })
   const opened = await adapter.ensureProjectSession({ id: 'p1', conversation: {} })
   assert.equal(opened.sessionId, 's1')
-  assert.deepEqual(selected, [{ sessionId: 's1', agentPreset: 'narraiva-ask' }])
+  assert.deepEqual(selected, [{ sessionId: 's1', agentPreset: 'narraiva-conversation' }])
   await adapter.send('s1', 'hello'); await adapter.cancel('s1')
   assert.equal(sent[0][0].text, 'hello'); assert.equal(cancelled, 1)
 })
@@ -48,14 +48,42 @@ test('versioned request metadata survives localized prompt copy changes', () => 
   assert.match(contextSummary(prompt), /manuscript\/a\.md/)
 })
 
-test('fails closed or creates a fresh session when the active session is not Ask', async () => {
+test('recognizes mode only from the leading request protocol marker', () => {
+  assert.equal(requestUsesProposalProtocol('[NARRAIVA_WRITE_V1]\nrequest'), true)
+  assert.equal(requestUsesProposalProtocol('[NARRAIVA_ASK_V1]\nWhat does [NARRAIVA_WRITE_V1] mean?'), false)
+})
+
+test('projects an assistant-first snapshot by its stable DSH turn mode', () => {
+  const literal = '<NARRAIVA_PROPOSAL_V1>example</NARRAIVA_PROPOSAL_V1>'
+  const view = projectConversationSnapshot(snapshot({ nodes: [
+    { kind: 'assistant', turn: 7, seq: 2, blocks: [{ kind: 'text', text: literal }] },
+    { kind: 'user', turn: 7, seq: 1, content: [{ type: 'text', text: '[NARRAIVA_ASK_V1]\nExplain this example' }] },
+  ] }))
+  assert.equal(view.messages[0].content, literal)
+  assert.equal(view.messages[0].protocolContent, undefined)
+})
+
+test('carries turn mode across paginated snapshots and applies it to partial output', () => {
+  const protocolByTurn = new Map()
+  projectConversationSnapshot(snapshot({ nodes: [{ kind: 'user', turn: 8, seq: 1, content: [{ type: 'text', text: '[NARRAIVA_ASK_V1]\nExplain an envelope' }] }] }), { protocolByTurn })
+  const askPage = projectConversationSnapshot(snapshot({ nodes: [{ kind: 'assistant', turn: 8, seq: 2, blocks: [{ kind: 'text', text: '<NARRAIVA_PROPOSAL_V1>example</NARRAIVA_PROPOSAL_V1>' }] }] }), { protocolByTurn })
+  assert.match(askPage.messages[0].content, /NARRAIVA_PROPOSAL/)
+
+  const write = projectConversationSnapshot(snapshot({
+    nodes: [{ kind: 'user', turn: 9, seq: 3, content: [{ type: 'text', text: '[NARRAIVA_WRITE_V1]\nRewrite' }] }],
+    partial: { turn: 9, step: 1, blocks: [{ kind: 'text', text: '<NARRAIVA_PROPOSAL_V1>{' }] },
+  }), { protocolByTurn })
+  assert.equal(write.messages.at(-1).kind, 'proposal-streaming')
+})
+
+test('fails closed or creates a fresh session when the active session is not unified Narraiva', async () => {
   const rows = { ids: ['old'], byId: { old: { id: 'old', blank: false, agentPreset: 'other' } } }
   const face = { getSnapshot: () => snapshot(), subscribe: () => () => {} }
   const sessions = { list: { getSnapshot: () => rows }, binding: id => rows.byId[id] ? { session: face } : undefined, create: async () => { rows.ids.push('fresh'); rows.byId.fresh = { id: 'fresh', blank: true }; return 'fresh' }, open: () => {}, noteAgentPreset: (id, preset) => { rows.byId[id].agentPreset = preset } }
   const api = { agentPresets: { select: async payload => ({ result: { ok: true, value: { agentPreset: payload.agentPreset } } }) } }
   const opened = await new NarraivaConversationAdapter({ sessions, api }).ensureProjectSession({ conversation: { activeId: 'old', ids: ['old'] } })
   assert.equal(opened.sessionId, 'fresh')
-  await assert.rejects(() => new NarraivaConversationAdapter({ sessions: { ...sessions, create: async () => 'unbound' }, api: {} }).ensureProjectSession({ conversation: {} }), /Ask preset 绑定能力/)
+  await assert.rejects(() => new NarraivaConversationAdapter({ sessions: { ...sessions, create: async () => 'unbound' }, api: {} }).ensureProjectSession({ conversation: {} }), /Narraiva preset 绑定能力/)
 })
 
 test('exposes history pagination state and maps terminal DSH errors', () => {
@@ -113,13 +141,27 @@ test('never renders a second Proposal envelope as assistant prose', () => {
   assert.equal(view.messages[0].protocolContent, one)
 })
 
-test('binds Write to a separate fail-closed writer session', async () => {
+test('Ask and Write share one fail-closed Narraiva conversation session', async () => {
   const rows = { byId: {} }
   const session = { getSnapshot: () => snapshot(), subscribe: () => () => {} }
   let count = 0; const selected = []
   const sessions = { list: { getSnapshot: () => rows }, create: async () => { const id = `w${++count}`; rows.byId[id] = { blank: true }; return id }, binding: id => rows.byId[id] ? { session } : undefined, open: () => {}, noteAgentPreset: (id, preset) => { rows.byId[id].agentPreset = preset } }
   const adapter = new NarraivaConversationAdapter({ sessions, api: { agentPresets: { select: async payload => { selected.push(payload); return { result: { ok: true } } } } } })
-  const opened = await adapter.ensureModeSession({ id: 'book' }, 'write')
-  assert.equal(opened.manifest.conversation.writeId, 'w1')
-  assert.deepEqual(selected, [{ sessionId: 'w1', agentPreset: 'narraiva-writer' }])
+  const ask = await adapter.ensureModeSession({ id: 'book', conversation: {} }, 'ask')
+  const write = await adapter.ensureModeSession(ask.manifest, 'write')
+  assert.equal(write.sessionId, ask.sessionId)
+  assert.equal(write.manifest.conversation.activeId, 'w1')
+  assert.equal(write.manifest.conversation.writeId, undefined)
+  assert.deepEqual(selected, [{ sessionId: 'w1', agentPreset: 'narraiva-conversation' }])
+})
+
+test('migrates legacy Ask and Write references into history before creating a unified session', async () => {
+  const rows = { byId: { ask1: { blank: false, agentPreset: 'narraiva-ask' }, write1: { blank: false, agentPreset: 'narraiva-writer' } } }
+  const face = { getSnapshot: () => snapshot(), subscribe: () => () => {} }
+  const sessions = { list: { getSnapshot: () => rows }, create: async () => { rows.byId.unified = { blank: true }; return 'unified' }, binding: id => rows.byId[id] ? { session: face } : undefined, open: () => {}, noteAgentPreset: (id, preset) => { rows.byId[id].agentPreset = preset } }
+  const api = { agentPresets: { select: async () => ({ result: { ok: true } }) } }
+  const opened = await new NarraivaConversationAdapter({ sessions, api }).ensureModeSession({ conversation: { activeId: 'ask1', ids: ['ask1'], writeId: 'write1' } }, 'write')
+  assert.equal(opened.sessionId, 'unified')
+  assert.deepEqual(opened.manifest.conversation.ids, ['ask1', 'write1', 'unified'])
+  assert.equal(opened.manifest.conversation.writeId, undefined)
 })

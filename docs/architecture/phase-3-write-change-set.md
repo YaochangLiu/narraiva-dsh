@@ -7,7 +7,7 @@ DeepSeek Write can only return a `NARRAIVA_PROPOSAL_V1` JSON envelope. It has no
 ## Flow
 
 1. The author explicitly selects Write and sends the current chapter or a real editor selection.
-2. A separate DSH session is bound fail-closed to `narraiva-writer`.
+2. The active unified DSH session is bound fail-closed to `narraiva-conversation`; Write is selected by the request protocol, not by switching conversations.
 3. The Browser Client parses and validates the structured Proposal.
 4. The editor presents old/new text and the assistant presents per-change rejection plus whole-Proposal actions.
 5. Accept creates a local Change Set and writes only the explicitly supplied document after revision verification.

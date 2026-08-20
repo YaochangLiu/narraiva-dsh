@@ -21,7 +21,7 @@ Phase 2 provides one complete read-only Ask path: a user configures their own De
 - `SessionFace.prompt()` for admission;
 - the `SessionFace` observable snapshot for durable history and streaming partials;
 - `SessionFace.cancel()` and `loadOlder()` for control;
-- `agentPresets.select` for binding a blank session to `narraiva-ask`.
+- `agentPresets.select` for binding a blank session to the unified `narraiva-conversation` preset. Ask and Write now share that session; their request markers select behavior.
 
 No direct model HTTP request exists in the plugin. DSH owns provider credentials, provider selection, transport, durable logs, and history.
 

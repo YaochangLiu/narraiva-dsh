@@ -7,21 +7,21 @@ Narraiva DSH is an open-source, local-first long-form fiction writing profile fo
 The current Spike proves a small but intentional boundary:
 
 - a separate Narraiva DSH profile/bundle;
-- local `Narraiva Ask` and `Narraiva Write` agent presets;
+- a local unified `Narraiva Conversation` preset, with legacy Ask/Write presets retained for migration compatibility;
 - an author-control prompt policy;
 - no shell, generic filesystem, or direct manuscript-write tool in the writer preset.
 - a DSH Browser Client that visibly replaces the product workbench with Narraiva's light three-column writing shell.
 
-The workbench is a safe UI and runtime Spike: it does **not** yet include real project persistence, manuscript reading/writing, Monaco, a model conversation surface, Diff review, Storybase, Stylebase, or a production installer. The model can temporarily support long-form creative work through DSH after the user configures a key, but Write output remains prose-only until the Proposal/Diff slice exists.
+The workbench now includes local project persistence, Ask/Write conversation, and reviewable Proposal/Change Set flows. Storybase, Stylebase, project-wide retrieval, Full Access, and a production installer remain future work.
 
 ### Modes
 
-Create a fresh DSH conversation and select its agent preset:
+Create a DSH conversation once, then change modes inside that same ordered history:
 
 - `Narraiva Ask` — questions, analysis, story diagnosis, and clarification. It does not generate ready-to-apply manuscript prose.
 - `Narraiva Write` — creates one reviewable Proposal with intent, scope, rationale, and proposed text. It never applies or saves that text.
 
-The selected DSH preset is attached to the session. The Phase 0 workbench's `思考` / `写作` controls are visual interaction previews only; session-preset binding lands with the real conversation adapter.
+Both modes use the `narraiva-conversation` preset. The `思考` / `写作` controls change the versioned request protocol and response UI without changing the DSH session.
 
 ## Local development
 

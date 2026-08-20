@@ -23,11 +23,11 @@ test('Narraiva bundle declares an installable DSH patch layer', async () => {
   assert.equal(manifest.exports['./package.json'], './package.json')
 })
 
-test('Narraiva profile defaults new sessions to Ask and keeps the upstream shell service available', async () => {
+test('Narraiva profile defaults new sessions to the unified conversation and keeps the upstream shell service available', async () => {
   const patch = await read('cordis.patch.yml')
 
   assert.match(patch, /id: agent-presets/)
-  assert.match(patch, /default: narraiva-ask/)
+  assert.match(patch, /default: narraiva-conversation/)
   assert.match(patch, /@narraiva\/dsh/)
   assert.doesNotMatch(patch, /id: ui-layout[\s\S]{0,120}?disabled: true/)
   assert.match(patch, /id: tool-pwsh\s+disabled: true/)
@@ -121,23 +121,23 @@ test('Browser Client bundle registers one DSH factory with the expected public c
   assert.equal(typeof registration.component, 'function')
 })
 
-test('Ask and Write have one stable mode interface and distinct DSH presets', () => {
+test('Ask and Write have one stable mode interface and one shared DSH preset', () => {
   assert.deepEqual(listNarraivaModes(), [
     {
       id: 'ask',
-      agentPreset: 'narraiva-ask',
+      agentPreset: 'narraiva-conversation',
       label: 'Narraiva Ask',
       purpose: '讨论、分析与澄清',
     },
     {
       id: 'write',
-      agentPreset: 'narraiva-writer',
+      agentPreset: 'narraiva-conversation',
       label: 'Narraiva Write',
       purpose: '生成作者可审阅的写作 Proposal',
     },
   ])
-  assert.equal(resolveNarraivaMode('ask').agentPreset, 'narraiva-ask')
-  assert.equal(resolveNarraivaMode('write').agentPreset, 'narraiva-writer')
+  assert.equal(resolveNarraivaMode('ask').agentPreset, 'narraiva-conversation')
+  assert.equal(resolveNarraivaMode('write').agentPreset, 'narraiva-conversation')
   assert.throws(() => resolveNarraivaMode('unknown'), /Unknown Narraiva mode/)
 })
 
@@ -151,4 +151,12 @@ test('Ask and Write presets preserve their author-control distinction', async ()
   assert.match(write, /Narraiva Write/)
   assert.match(write, /Proposal/)
   assert.match(bootstrap, /narraiva-ask/)
+})
+
+test('unified conversation preset switches behavior by request protocol without file authority', async () => {
+  const unified = await read('presets/narraiva-conversation/agent.cordis.yml')
+  assert.match(unified, /NARRAIVA_ASK_V1/)
+  assert.match(unified, /NARRAIVA_WRITE_V1/)
+  assert.match(unified, /one continuous conversation/)
+  assert.doesNotMatch(unified, /tool-fs|tool-bash|str-replace/)
 })

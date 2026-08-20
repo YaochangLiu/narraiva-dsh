@@ -1,13 +1,13 @@
 const modes = Object.freeze([
   Object.freeze({
     id: 'ask',
-    agentPreset: 'narraiva-ask',
+    agentPreset: 'narraiva-conversation',
     label: 'Narraiva Ask',
     purpose: '讨论、分析与澄清',
   }),
   Object.freeze({
     id: 'write',
-    agentPreset: 'narraiva-writer',
+    agentPreset: 'narraiva-conversation',
     label: 'Narraiva Write',
     purpose: '生成作者可审阅的写作 Proposal',
   }),
