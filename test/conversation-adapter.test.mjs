@@ -64,3 +64,14 @@ test('exposes history pagination state and maps terminal DSH errors', () => {
   assert.equal(view.loadingOlder, true)
   assert.match(view.messages[0].content, /额度/)
 })
+
+test('binds Write to a separate fail-closed writer session', async () => {
+  const rows = { byId: {} }
+  const session = { getSnapshot: () => snapshot(), subscribe: () => () => {} }
+  let count = 0; const selected = []
+  const sessions = { list: { getSnapshot: () => rows }, create: async () => { const id = `w${++count}`; rows.byId[id] = { blank: true }; return id }, binding: id => rows.byId[id] ? { session } : undefined, open: () => {}, noteAgentPreset: (id, preset) => { rows.byId[id].agentPreset = preset } }
+  const adapter = new NarraivaConversationAdapter({ sessions, api: { agentPresets: { select: async payload => { selected.push(payload); return { result: { ok: true } } } } } })
+  const opened = await adapter.ensureModeSession({ id: 'book' }, 'write')
+  assert.equal(opened.manifest.conversation.writeId, 'w1')
+  assert.deepEqual(selected, [{ sessionId: 'w1', agentPreset: 'narraiva-writer' }])
+})

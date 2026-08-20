@@ -71,3 +71,52 @@ test('rolls a deleted document back when manifest persistence fails', async () =
   await assert.rejects(() => adapter.deleteDocumentAndSaveManifest(document.path, { ...adapter.manifest, documents: [], activeDocumentId: null }), error => error.code === 'WRITE_FAILED')
   assert.match((await adapter.readDocument(document.path)).content, /Chapter 1/)
 })
+
+test('applies and safely rolls back an author-approved change set', async () => {
+  const root = new MemoryDirectoryHandle()
+  const adapter = await NarraivaProjectAdapter.create(root, 'Book')
+  const doc = adapter.manifest.documents[0]
+  const before = await adapter.readDocument(doc.path)
+  const proposal = { id: 'p1', source: { path: doc.path, diskRevision: before.revision }, changes: [{ filePath: doc.path }] }
+  const applied = await adapter.applyChangeSet(proposal, '# Changed\n')
+  assert.equal((await adapter.readDocument(doc.path)).content, '# Changed\n')
+  const undone = await adapter.undoChangeSet(applied)
+  assert.equal(undone.status, 'rolled_back')
+  assert.equal((await adapter.readDocument(doc.path)).content, before.content)
+})
+
+test('refuses apply and undo after an external revision change', async () => {
+  const root = new MemoryDirectoryHandle()
+  const adapter = await NarraivaProjectAdapter.create(root, 'Book')
+  const doc = adapter.manifest.documents[0]
+  const before = await adapter.readDocument(doc.path)
+  const proposal = { id: 'p1', source: { path: doc.path, diskRevision: before.revision }, changes: [{ filePath: doc.path }] }
+  await adapter.saveDocument(doc.path, 'external', before.revision)
+  await assert.rejects(() => adapter.applyChangeSet(proposal, 'changed'), error => error.code === 'WRITE_CONFLICT')
+})
+
+test('rolls manuscript changes back when Change Set manifest persistence fails', async () => {
+  const root = new MemoryDirectoryHandle(); const adapter = await NarraivaProjectAdapter.create(root, 'Book'); const doc = adapter.manifest.documents[0]; const before = await adapter.readDocument(doc.path)
+  const proposal = { id: 'p1', source: { path: doc.path, diskRevision: before.revision }, changes: [{ filePath: doc.path }] }
+  const originalSave = adapter.saveManifest.bind(adapter); adapter.saveManifest = async () => { throw new Error('manifest full') }
+  await assert.rejects(() => adapter.applyChangeSetAndSaveManifest(proposal, '# Changed\n', adapter.manifest), error => error.code === 'CHANGE_SET_RECORD_FAILED')
+  assert.equal((await adapter.readDocument(doc.path)).content, before.content)
+  adapter.saveManifest = originalSave
+})
+
+test('restores applied text when undo record persistence fails', async () => {
+  const root = new MemoryDirectoryHandle(); const adapter = await NarraivaProjectAdapter.create(root, 'Book'); const doc = adapter.manifest.documents[0]; const before = await adapter.readDocument(doc.path)
+  const proposal = { id: 'p1', source: { path: doc.path, diskRevision: before.revision }, changes: [{ filePath: doc.path }] }
+  const applied = await adapter.applyChangeSet(proposal, '# Changed\n'); adapter.saveManifest = async () => { throw new Error('manifest full') }
+  await assert.rejects(() => adapter.undoChangeSetAndSaveManifest(applied, adapter.manifest), error => error.code === 'CHANGE_SET_RECORD_FAILED')
+  assert.equal((await adapter.readDocument(doc.path)).content, '# Changed\n')
+})
+
+test('never claims compensation succeeded when manifest and rollback both fail', async () => {
+  const root = new MemoryDirectoryHandle(); const adapter = await NarraivaProjectAdapter.create(root, 'Book'); const doc = adapter.manifest.documents[0]; const before = await adapter.readDocument(doc.path)
+  const proposal = { id: 'p1', source: { path: doc.path, diskRevision: before.revision }, changes: [{ filePath: doc.path }] }
+  const realSaveDocument = adapter.saveDocument.bind(adapter); let writes = 0
+  adapter.saveDocument = async (...args) => { if (++writes === 2) throw new Error('rollback disk failure'); return realSaveDocument(...args) }
+  adapter.saveManifest = async () => { throw new Error('manifest full') }
+  await assert.rejects(() => adapter.applyChangeSetAndSaveManifest(proposal, '# Changed\n', adapter.manifest), error => error.code === 'CHANGE_SET_ROLLBACK_FAILED' && /可能已经改变/.test(error.message))
+})

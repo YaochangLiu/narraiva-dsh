@@ -17,7 +17,7 @@ Ask、Write 和未来的 Full Access 是三个独立模式：
 | 0 | DSH 与 Browser Client 技术 Spike | Narraiva 能通过正式插件接口稳定挂载并接管本地 Web 根 UI；Host/Browser 边界已验证。 |
 | 1 | 本地项目工作台 | 创建、打开、编辑、自动保存和重启恢复在项目根目录内可靠完成。 |
 | 2 | Ask 垂直切片 | 用户在 DSH 本地配置自己的 DeepSeek Key 后，可从 Narraiva Ask 获得带显式上下文的真实回答。 |
-| 3 | Write 与 Change Set | 模型只能提议；作者可逐项/批量审阅、接受、拒绝、撤销；冲突不会覆盖文件。 |
+| 3 | Write 与 Change Set | **已实现。** 模型只能提议；作者可逐项/批量审阅、接受、拒绝、撤销；冲突不会覆盖文件。 |
 | 4 | 受控项目检索 | Write 的项目检索默认关闭，开启后只在项目根目录内检索，并向作者展示最终发送范围。 |
 | 5 | 公开 Alpha | npm/单命令启动、MIT 与商标文本、Windows 端到端证据和公开文档完整。 |
 | 后续 | Storybase Lite、本地 Companion、Full Access | 仅在前面数据边界、审阅与恢复机制已稳定后启动。 |
@@ -32,4 +32,4 @@ Ask、Write 和未来的 Full Access 是三个独立模式：
 
 ## 当前阶段
 
-阶段 2 已实现并完成真实 DSH/DeepSeek 垂直验证。Ask 的会话、显式上下文、流式回答、停止、重试、项目级历史与 BYOK 边界见 [Phase 2 Ask 垂直切片](architecture/phase-2-ask-vertical-slice.md)。下一阶段是 Write 与 Change Set。
+阶段 3 已实现 Write、结构化 Proposal、Diff 审阅、作者确认后的 Change Set 和安全撤销。下一阶段是受控项目检索；Full Access 仍不实现。

@@ -7,7 +7,7 @@ function contextSummary(prompt) { const metadata = requestMetadata(prompt); cons
 function projectConversationSnapshot(snapshot) {
   const messages = []
   for (const node of snapshot.nodes || []) {
-    if (node.kind === 'user' || node.kind === 'steering') { const prompt = textContent(node.content); messages.push({ id: `dsh-${node.seq}`, role: 'user', content: displayQuestion(prompt), contextSummary: contextSummary(prompt), status: 'done', createdAt: node.time }) }
+    if (node.kind === 'user' || node.kind === 'steering') { const prompt = textContent(node.content); messages.push({ id: `dsh-${node.seq}`, role: 'user', content: displayQuestion(prompt), contextSummary: contextSummary(prompt), requestMetadata: requestMetadata(prompt), status: 'done', createdAt: node.time }) }
     if (node.kind === 'assistant') messages.push({ id: `dsh-${node.seq}`, role: 'assistant', content: assistantText(node.blocks), status: node.interrupted ? 'cancelled' : 'done', createdAt: node.time, model: node.provenance?.model })
     if (node.kind === 'turn-error') messages.push({ id: `dsh-${node.seq}`, role: 'assistant', content: errorMessage(node.code, node.message), status: 'error', createdAt: node.time, errorCode: node.code })
   }
@@ -41,7 +41,24 @@ class NarraivaConversationAdapter {
     const ids = [...new Set([...(manifest.conversation?.ids || []), sessionId])]
     return { sessionId, manifest: { ...manifest, conversation: { ...(manifest.conversation || {}), ids, activeId: sessionId } } }
   }
+  async ensureModeSession(manifest, mode = 'ask') {
+    if (mode === 'ask') return this.ensureProjectSession(manifest)
+    const preset = 'narraiva-writer'
+    let sessionId = manifest.conversation?.writeId
+    if (!sessionId || !this.sessions.binding(sessionId)) sessionId = await this.sessions.create({})
+    const row = this.sessions.list?.getSnapshot?.().byId?.[sessionId]
+    if (row?.blank === false && row?.agentPreset !== preset) throw new Error('当前 DSH 对话不是 Narraiva Write，已停止发送。')
+    if (row?.agentPreset !== preset) {
+      if (!this.api.agentPresets?.select) throw new Error('DSH 未提供 Write preset 绑定能力，已停止发送。')
+      const response = await this.api.agentPresets.select({ sessionId, agentPreset: preset })
+      if (!response.result?.ok) throw new Error(errorMessage(response.result?.error?.code, response.result?.error?.message))
+      this.sessions.noteAgentPreset?.(sessionId, preset)
+    }
+    this.sessions.open?.(sessionId)
+    return { sessionId, manifest: { ...manifest, conversation: { ...(manifest.conversation || {}), writeId: sessionId } } }
+  }
   async createProjectSession(manifest) { const sessionId = await this.sessions.create({}); return this.ensureProjectSession({ ...manifest, conversation: { ...(manifest.conversation || {}), activeId: sessionId } }) }
+  async createModeSession(manifest, mode) { if (mode === 'ask') return this.createProjectSession(manifest); const sessionId = await this.sessions.create({}); return this.ensureModeSession({ ...manifest, conversation: { ...(manifest.conversation || {}), writeId: sessionId } }, 'write') }
   openProjectSession(manifest, sessionId) { if (!(manifest.conversation?.ids || []).includes(sessionId)) throw new Error('该对话不属于当前项目。'); if (!this.sessions.binding(sessionId)) throw new Error('DSH 对话暂不可用。'); const row = this.sessions.list?.getSnapshot?.().byId?.[sessionId]; if (row?.agentPreset !== 'narraiva-ask') throw new Error('该对话不是 Narraiva Ask，已停止打开。'); this.sessions.open?.(sessionId); return { ...manifest, conversation: { ...manifest.conversation, activeId: sessionId } } }
   listProjectSessions(manifest) { const rows = this.sessions.list?.getSnapshot?.().byId || {}; return (manifest.conversation?.ids || []).filter(id => this.sessions.binding(id)).map(id => ({ id, title: rows[id]?.displayTitle || rows[id]?.title || `对话 ${id.slice(0, 8)}`, running: Boolean(rows[id]?.running) })) }
   face(sessionId) { const face = this.sessions.binding(sessionId)?.session; if (!face) throw new Error('DSH 会话不可用，请新建对话。'); return face }

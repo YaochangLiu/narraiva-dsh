@@ -19,5 +19,4 @@
 
 Narraiva DSH 是一个开源、local-first 的 DeepSeek Harness 插件。用户自行在其本地 DSH 环境配置 DeepSeek API Key；Narraiva DSH 不连接 Narraiva Cloud，不接收密钥、稿件、项目数据或遥测。
 
-当前代码仅完成了基础 Host 策略与 Ask/Write preset Spike；它尚未包含 Narraiva 工作台、项目持久化、Proposal/Diff、Storybase、Stylebase 或发布安装器。
-
+当前代码已完成本地工作台、真实 Ask，以及 Write 的结构化 Proposal、Diff 审阅、Change Set 安全应用与撤销。它尚未包含受控项目检索、Storybase、Stylebase、Full Access 或发布安装器。
