@@ -53,8 +53,8 @@ Projects, sessions, and the DeepSeek credential are local to the user's Harness 
 1. Local project workbench: direct portable Desktop component migration, project picker, chapter tree, editor, and local persistence.
 2. Ask conversation adapter: DSH session/preset binding, BYOK model conversation, explicit context manifest.
 3. Proposal/Diff: Write review, accept/reject, local revision history.
-4. Storybase Lite: candidate-first facts, evidence, canonical confirmation, bounded retrieval.
-5. Optional local retrieval and Stylebase experiments.
+4. Controlled local retrieval: implemented with project-root scanning, lexical ranking, visible evidence selection, and auditable receipts.
+5. Public Alpha packaging, followed by optional Storybase Lite and Stylebase experiments.
 
 ## License
 

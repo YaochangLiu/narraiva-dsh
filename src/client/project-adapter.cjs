@@ -12,6 +12,24 @@ async function writeHandle(handle, content) {
   try { writable = await handle.createWritable(); await writable.write(content); await writable.close() }
   catch (cause) { try { await writable?.abort?.() } catch {} throw new NarraivaProjectError('WRITE_FAILED', `Narraiva could not save ${handle.name}.`, cause) }
 }
+const RETRIEVAL_EXTENSIONS = /\.(?:md|markdown|txt)$/iu
+const RETRIEVAL_IGNORED = new Set(['.git', 'node_modules'])
+function validateRetrievalPath(value) {
+  if (typeof value !== 'string') throw new NarraivaProjectError('RETRIEVAL_INVALID', '项目证据必须是授权目录内的相对文本路径。')
+  const normalized = value.replace(/\\/gu, '/')
+  if (!normalized || normalized.startsWith('/') || /^[a-z]:/iu.test(normalized) || normalized.split('/').some(part => !part || part === '..') || !RETRIEVAL_EXTENSIONS.test(normalized)) throw new NarraivaProjectError('RETRIEVAL_INVALID', `无效的项目证据路径：${value}`)
+  return normalized
+}
+async function scanTextHandles(directory, prefix = '', output = []) {
+  for await (const [name, handle] of directory.entries()) {
+    if (name.startsWith('.') || RETRIEVAL_IGNORED.has(name) || name === PROJECT_FILE) continue
+    const path = prefix ? `${prefix}/${name}` : name
+    if (handle.kind === 'directory') await scanTextHandles(handle, path, output)
+    else if (RETRIEVAL_EXTENSIONS.test(name)) output.push({ path, handle })
+    if (output.length > 200) throw new NarraivaProjectError('RETRIEVAL_LIMIT', '项目包含超过 200 个可检索文本文件，请缩小项目范围。')
+  }
+  return output
+}
 
 class NarraivaProjectAdapter {
   constructor(root, manifest) { this.root = root; this.manifest = manifest }
@@ -31,6 +49,34 @@ class NarraivaProjectAdapter {
     return new NarraivaProjectAdapter(root, parseProjectManifest(content))
   }
   async readDocument(relativePath) { const path = validateProjectPath(relativePath); return readHandle(await fileHandleAt(this.root, path)) }
+  async scanProjectTextFiles() {
+    const handles = await scanTextHandles(this.root)
+    const files = []
+    for (const item of handles.sort((a, b) => a.path.localeCompare(b.path))) {
+      const file = await item.handle.getFile()
+      if (file.size > 512 * 1024) continue
+      files.push({ path: item.path, content: await file.text(), revision: revisionOf(file) })
+    }
+    return files
+  }
+  async validateRetrievalItems(items) {
+    const validated = []
+    for (const item of items || []) {
+      try {
+        const path = validateRetrievalPath(item.path)
+        if (!Number.isInteger(item.startLine) || !Number.isInteger(item.endLine) || item.startLine < 1 || item.endLine < item.startLine) throw new NarraivaProjectError('RETRIEVAL_INVALID', '项目证据的位置无效，请重新索引。')
+        const file = await (await fileHandleAt(this.root, path)).getFile()
+        const content = (await file.text()).replace(/\r\n?/gu, '\n')
+        const exactText = content.split('\n').slice(item.startLine - 1, item.endLine).join('\n').trim()
+        if (revisionOf(file) !== item.revision || exactText !== item.text) throw new NarraivaProjectError('RETRIEVAL_STALE', `${path} 已在索引后发生变化。请重新索引并再次确认发送证据。`)
+        validated.push(item)
+      } catch (cause) {
+        if (cause instanceof NarraivaProjectError) throw cause
+        throw new NarraivaProjectError('RETRIEVAL_READ_FAILED', `无法在发送前重新读取 ${item?.path || '项目证据'}，本次请求未发送。`, cause)
+      }
+    }
+    return validated
+  }
   async writeNewDocument(relativePath, content) { const path = validateProjectPath(relativePath); const handle = await fileHandleAt(this.root, path, true); await writeHandle(handle, content); return readHandle(handle) }
   async saveDocument(relativePath, content, expectedRevision) {
     const path = validateProjectPath(relativePath); const handle = await fileHandleAt(this.root, path); const before = await handle.getFile()
@@ -79,4 +125,4 @@ class NarraivaProjectAdapter {
   }
 }
 
-module.exports = { NarraivaProjectAdapter, readHandle, revisionOf }
+module.exports = { NarraivaProjectAdapter, readHandle, revisionOf, scanTextHandles, validateRetrievalPath }

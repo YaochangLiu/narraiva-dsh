@@ -17,6 +17,7 @@ test('creates a versioned Narraiva project with one manuscript', () => {
   assert.equal(manifest.name, 'The Zero Crown')
   assert.equal(manifest.documents[0].path, 'manuscript/chapter_001.md')
   assert.equal(manifest.activeDocumentId, manifest.documents[0].id)
+  assert.equal(manifest.retrieval.enabled, false)
 })
 
 test('rejects absolute and escaping document paths', () => {
@@ -47,4 +48,3 @@ test('adds, renames, reorders and removes documents without mutating input', () 
   assert.equal(removed.documents.length, 1)
   assert.equal(removed.activeDocumentId, removed.documents[0].id)
 })
-

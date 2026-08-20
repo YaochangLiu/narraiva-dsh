@@ -34,7 +34,7 @@ function createProjectManifest(name, options = {}) {
   const now = options.now || new Date().toISOString()
   const id = options.id || crypto.randomUUID()
   const documentId = options.documentId || `${id}-chapter-1`
-  return { version: PROJECT_VERSION, id, name: title, documents: [{ id: documentId, title: 'Chapter 1', path: 'manuscript/chapter_001.md', order: 0 }], activeDocumentId: documentId, createdAt: now, updatedAt: now }
+  return { version: PROJECT_VERSION, id, name: title, documents: [{ id: documentId, title: 'Chapter 1', path: 'manuscript/chapter_001.md', order: 0 }], activeDocumentId: documentId, retrieval: { enabled: false }, createdAt: now, updatedAt: now }
 }
 
 function validateManifest(value) {
@@ -46,6 +46,8 @@ function validateManifest(value) {
     ids.add(item.id); validateProjectPath(item.path); item.order = index
   })
   if (value.activeDocumentId != null && !ids.has(value.activeDocumentId)) throw new NarraivaProjectError('INVALID_MANIFEST', 'Active document is missing.')
+  if (value.retrieval != null && typeof value.retrieval.enabled !== 'boolean') throw new NarraivaProjectError('INVALID_MANIFEST', 'Project retrieval settings are invalid.')
+  value.retrieval ||= { enabled: false }
   return value
 }
 

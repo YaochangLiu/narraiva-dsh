@@ -13,11 +13,12 @@ class MemoryFileHandle {
   }
 }
 class MemoryDirectoryHandle {
-  constructor(name = 'project') { this.kind = 'directory'; this.name = name; this.entries = new Map() }
-  async getDirectoryHandle(name, options = {}) { let value = this.entries.get(name); if (!value && options.create) { value = new MemoryDirectoryHandle(name); this.entries.set(name, value) } if (!value || value.kind !== 'directory') throw new DOMException('missing', 'NotFoundError'); return value }
-  async getFileHandle(name, options = {}) { let value = this.entries.get(name); if (!value && options.create) { value = new MemoryFileHandle(name); this.entries.set(name, value) } if (!value || value.kind !== 'file') throw new DOMException('missing', 'NotFoundError'); return value }
-  async removeEntry(name) { if (!this.entries.delete(name)) throw new DOMException('missing', 'NotFoundError') }
+  constructor(name = 'project') { this.kind = 'directory'; this.name = name; this.children = new Map() }
+  async getDirectoryHandle(name, options = {}) { let value = this.children.get(name); if (!value && options.create) { value = new MemoryDirectoryHandle(name); this.children.set(name, value) } if (!value || value.kind !== 'directory') throw new DOMException('missing', 'NotFoundError'); return value }
+  async getFileHandle(name, options = {}) { let value = this.children.get(name); if (!value && options.create) { value = new MemoryFileHandle(name); this.children.set(name, value) } if (!value || value.kind !== 'file') throw new DOMException('missing', 'NotFoundError'); return value }
+  async removeEntry(name) { if (!this.children.delete(name)) throw new DOMException('missing', 'NotFoundError') }
   async queryPermission() { return 'granted' }
+  async *entries() { yield* this.children.entries() }
 }
 
 test('creates, reopens and saves a local Narraiva project', async () => {
@@ -31,6 +32,42 @@ test('creates, reopens and saves a local Narraiva project', async () => {
   const reopened = await NarraivaProjectAdapter.open(root)
   assert.equal(reopened.manifest.name, 'The Zero Crown')
   assert.equal((await reopened.readDocument(first.path)).content, '# Chapter 1\n\nDraft.')
+})
+
+test('scans only bounded project text files for controlled retrieval', async () => {
+  const root = new MemoryDirectoryHandle()
+  const adapter = await NarraivaProjectAdapter.create(root, 'Novel')
+  const notes = await root.getDirectoryHandle('notes', { create: true })
+  ;(await notes.getFileHandle('outline.txt', { create: true })).content = 'The hidden crown.'
+  ;(await notes.getFileHandle('image.png', { create: true })).content = 'binary'
+  const hidden = await root.getDirectoryHandle('.secret', { create: true })
+  ;(await hidden.getFileHandle('keys.md', { create: true })).content = 'never index'
+  const files = await adapter.scanProjectTextFiles()
+  assert.deepEqual(files.map(file => file.path), ['manuscript/chapter_001.md', 'notes/outline.txt'])
+})
+
+test('scans supported text beyond eight nested directories', async () => {
+  const root = new MemoryDirectoryHandle(); const adapter = await NarraivaProjectAdapter.create(root, 'Novel')
+  let directory = root
+  for (let index = 0; index < 10; index++) directory = await directory.getDirectoryHandle(`level-${index}`, { create: true })
+  ;(await directory.getFileHandle('deep.md', { create: true })).content = 'deep evidence'
+  assert.ok((await adapter.scanProjectTextFiles()).some(file => file.path.endsWith('/deep.md')))
+})
+
+test('refuses to send retrieval evidence changed since indexing', async () => {
+  const root = new MemoryDirectoryHandle(); const adapter = await NarraivaProjectAdapter.create(root, 'Novel')
+  const notes = await root.getDirectoryHandle('notes', { create: true }); const handle = await notes.getFileHandle('fact.md', { create: true }); handle.content = '# Fact\n\nOld truth.'
+  const file = (await adapter.scanProjectTextFiles()).find(item => item.path === 'notes/fact.md')
+  const item = { id: 'notes/fact.md:1-3', path: file.path, heading: 'Fact', startLine: 1, endLine: 3, revision: file.revision, text: file.content }
+  handle.content = '# Fact\n\nNew truth.'; handle.version++
+  await assert.rejects(() => adapter.validateRetrievalItems([item]), error => error.code === 'RETRIEVAL_STALE')
+})
+
+test('validates txt and markdown evidence without widening manuscript write paths', async () => {
+  const root = new MemoryDirectoryHandle(); const adapter = await NarraivaProjectAdapter.create(root, 'Novel'); const notes = await root.getDirectoryHandle('notes', { create: true })
+  for (const name of ['outline.txt', 'world.markdown']) { const handle = await notes.getFileHandle(name, { create: true }); handle.content = 'Evidence'; const file = (await adapter.scanProjectTextFiles()).find(item => item.path === `notes/${name}`); await adapter.validateRetrievalItems([{ path: file.path, startLine: 1, endLine: 1, revision: file.revision, text: file.content }]) }
+  await assert.rejects(() => adapter.readDocument('notes/outline.txt'), error => error.code === 'INVALID_PATH')
+  await assert.rejects(() => adapter.validateRetrievalItems([{ path: '../outside.txt', startLine: 1, endLine: 1, revision: 'x', text: '' }]), error => error.code === 'RETRIEVAL_INVALID')
 })
 
 test('refuses overwrite after external modification', async () => {
