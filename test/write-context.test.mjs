@@ -14,6 +14,15 @@ test('builds a strict Write proposal request over the real document snapshot', (
   assert.deepEqual(metadata.skillRoute.skills, ['short-selection-rewrite'])
 })
 
+test('persists the author-selected method in the request receipt', () => {
+  const skillRoute = routeWritingSkills({ mode: 'write', input: '@选中文本 重写', selection: 'beta', preferredSkill: 'selection-rewrite' })
+  const prompt = buildWritePrompt({ input: '@选中文本 重写', document: { path: 'manuscript/a.md' }, content: 'Alpha beta', revision: '1:10', selection: 'beta', selectionStart: 6, skillRoute })
+  const metadata = JSON.parse(decodeURIComponent(prompt.match(/\[NARRAIVA_META_V1\](.+)/u)[1]))
+  assert.equal(metadata.skillRoute.selectionSource, 'manual')
+  assert.equal(metadata.skillRoute.preferredSkill, 'selection-rewrite')
+  assert.deepEqual(metadata.skillRoute.skills, ['selection-rewrite'])
+})
+
 test('Write can reference selected project evidence without expanding its editable source', () => {
   const retrieval = { items: [{ id: 'notes/a.md:1-1', path: 'notes/a.md', heading: 'Fact', startLine: 1, endLine: 1, revision: '2:4', text: 'Fact' }], receipt: { characterCount: 4, items: [{ id: 'notes/a.md:1-1', path: 'notes/a.md', startLine: 1, endLine: 1, revision: '2:4', characterCount: 4 }] } }
   const prompt = buildWritePrompt({ input: '参考设定改写', document: { path: 'manuscript/a.md' }, content: 'Draft', revision: '1:5', selection: '', retrieval })

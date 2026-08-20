@@ -12,7 +12,7 @@ Narraiva DSH is an open-source, local-first long-form fiction workspace built on
 - Ask with explicit current-document or selection context.
 - Write as a reviewable Proposal with inline Patch, accept/reject, Change Set, and undo.
 - Optional controlled project retrieval over author-granted `.md`, `.markdown`, and `.txt` files.
-- Ten fiction-writing methods selected transparently and loaded through DSH's native Skill mechanism.
+- Ten fiction-writing methods selected transparently, adjustable for the next request from a context-safe list, and loaded through DSH's native Skill mechanism.
 - DeepSeek BYOK through DSH; no Narraiva account or cloud API.
 
 Skills never receive filesystem authority, and Write still passes through Proposal, Patch, and explicit author acceptance. Full Access, Storybase, and Stylebase are intentionally not part of this alpha.

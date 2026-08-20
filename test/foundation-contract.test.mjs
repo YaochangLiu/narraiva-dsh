@@ -82,6 +82,15 @@ test('Browser source remains a local, credential-free presentation layer', async
   assert.doesNotMatch(hostSource, /DEEPSEEK_API_KEY|api[_-]?key|cloud/i)
 })
 
+test('Browser Client exposes an accessible next-request writing method control', async () => {
+  const source = await read('src/client/index.cjs')
+  assert.match(source, /aria-label': '本次写作方法'/u)
+  assert.match(source, /自动选择/u)
+  assert.match(source, /查看方法依据/u)
+  assert.match(source, /selectionSource/u)
+  assert.match(source, /依据：\$\{receipt\.reason\}/u)
+})
+
 test('Browser Client bundle registers one DSH factory with the expected public client face', async () => {
   const bundle = await read('lib/client.js')
   let handoff
