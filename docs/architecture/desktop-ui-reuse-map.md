@@ -2,7 +2,7 @@
 
 ## 结论
 
-Narraiva DSH 的界面以当前 `NovelOS-alpha` 桌面端为唯一产品源头。它不是重新设计的网页，也不是对桌面端视觉的参考实现：可移植的布局、视觉 token、组件层次与交互状态将直接迁入本仓库；只有运行时边界需要替换。
+Narraiva DSH 的界面以当前 `NovelOS-alpha` 桌面端为唯一产品源头，不另行发明一套产品哲学。Public Alpha 已按照桌面端的布局、视觉 token、组件职责与交互状态完成独立的 DSH Browser Client 实现；由于运行时和开源边界不同，本期没有直接复制 Desktop React/Electron 源文件。未来直接迁移源码前必须补充来源与许可记录。
 
 这份映射把“可以直接用什么”和“必须用 DSH 改写什么”分开，避免在公共 BYOK 插件中意外携带 Electron、Narraiva Cloud、账户或设备逻辑。
 
@@ -14,9 +14,9 @@ Phase 0 已验证 DSH 的装载边界，并以桌面端同名组件责任实现�
 | --- | --- | --- | --- |
 | `components/layout/AppShell.tsx` | `NarraivaRoot` + 三栏 workbench | 已验证同一布局责任 | DSH `shell.overlay` 作为可见主 UI；上游 `root` 只保留 layout runtime 服务 |
 | `components/layout/TitleBar.tsx` | `NarraivaTitleBar` | 已实现可运行的 Web 对应壳 | 删除窗口控制和原生菜单调用 |
-| `components/sidebar/ProjectNavigator.tsx` | `ProjectNavigator` | 已实现静态层次与选择预览 | Phase 1 直接迁入可移植 UI 并以本地项目 adapter 提供树与操作 |
-| `components/editor/ManuscriptEditor.tsx` | `ManuscriptEditor` | 已实现静态编辑工作区预览 | Phase 1 直接迁入可移植 UI 并以 editor/project adapter 提供文本、保存与选区 |
-| `components/assistant/AIPanel.tsx` | `AssistantPanel` | 已实现对话、历史、模式控制预览 | Phase 2 直接迁入可移植 UI 并以 DSH conversation adapter 提供消息和发送 |
+| `components/sidebar/ProjectNavigator.tsx` | `ProjectNavigator` | 已按职责映射并以本地 project adapter 独立实现树与操作 | 后续逐项校准产品一致性，不复制 Electron 依赖 |
+| `components/editor/ManuscriptEditor.tsx` | `ManuscriptEditor` | 已按职责映射并以 browser project adapter 独立实现文本、保存与选区 | 后续逐项校准产品一致性 |
+| `components/assistant/AIPanel.tsx` | `AssistantPanel` | 已按职责映射并以 DSH conversation adapter 独立实现消息与发送 | 后续逐项校准产品一致性 |
 | `components/layout/StatusBar.tsx` | `NarraivaStatusBar` | 已实现无敏感连接状态 | DSH `connection` 只暴露无敏感连接状态 |
 
 ## 不可直接复制的依赖

@@ -14,9 +14,13 @@
 
 - [产品与技术路线图](ROADMAP.md)
 - [阶段 0：DSH 与 Browser Client 技术 Spike](plans/phase-0-dsh-browser-client-spike.md)
+- [Public Alpha 安装](INSTALLATION.md)
+- [架构总览](ARCHITECTURE.md)
+- [数据边界](DATA-BOUNDARY.md)
+- [Public Alpha 发布清单](PUBLIC-ALPHA-CHECKLIST.md)
 
 ## 当前边界
 
 Narraiva DSH 是一个开源、local-first 的 DeepSeek Harness 插件。用户自行在其本地 DSH 环境配置 DeepSeek API Key；Narraiva DSH 不连接 Narraiva Cloud，不接收密钥、稿件、项目数据或遥测。
 
-当前代码已完成本地工作台、真实 Ask，以及 Write 的结构化 Proposal、Diff 审阅、Change Set 安全应用与撤销。它尚未包含受控项目检索、Storybase、Stylebase、Full Access 或发布安装器。
+当前代码已完成本地工作台、真实 Ask、Write 的结构化 Proposal、Diff 审阅、Change Set 安全应用与撤销、受控项目检索，以及 Public Alpha 的可发布包和 CLI。Storybase、Stylebase 与 Full Access 尚未实现；npm registry 发布和真实外部 Windows/BYOK 流程仍是人为发布门槛。

@@ -3,3 +3,4 @@ coverage/
 .dev-logs/
 .tmp/
 .DS_Store
+*.tgz

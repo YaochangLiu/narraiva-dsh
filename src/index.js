@@ -14,7 +14,7 @@ export function apply(ctx) {
     text: [
       'Narraiva author-control policy:',
       '- Treat the author as the sole authority over manuscript changes.',
-      '- Ask and Write are separate session modes. Follow the selected mode rather than inferring a switch from one prompt.',
+      '- Ask and Write are request modes inside one continuous Narraiva Conversation. Follow the leading versioned request marker for each turn.',
       '- Ask discusses, diagnoses, outlines, or clarifies; Write returns a clearly labeled Proposal with rationale and proposed text.',
       '- Never claim that a proposal was applied, saved, or made canonical. The author must review it.',
       '- Keep long-form continuity explicit: distinguish supplied manuscript facts from suggestions.',

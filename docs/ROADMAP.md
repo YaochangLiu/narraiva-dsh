@@ -21,12 +21,12 @@ Ask、Write 和未来的 Full Access 是三个独立模式：
 | 3.1 | Proposal Review UI | **已实现。** 协议不进入聊天正文；Proposal 生命周期统一；Patch 在完整稿件上下文和真实 offset 中审阅、定位。 |
 | 3.2 | 统一会话模式 | **已实现。** Ask 与 Write 共享同一个 DSH Conversation；模式仅改变请求协议与审阅 UI。 |
 | 4 | 受控项目检索 | **已实现。** Ask/Write 项目检索默认关闭；开启后只索引授权根目录的受支持文本，作者逐项确认，并在 Context Receipt 中审计实际发送范围。 |
-| 5 | 公开 Alpha | npm/单命令启动、MIT 与商标文本、Windows 端到端证据和公开文档完整。 |
+| 5 | 公开 Alpha | **代码已实现。** npm 可发布包、公共 CLI、MIT 与商标文本、贡献治理、兼容性 doctor、公开文档与 CI 已完成；正式 prerelease 仍以干净 Windows + 真实 BYOK 人工证据为发布门槛。 |
 | 后续 | Storybase Lite、本地 Companion、Full Access | 仅在前面数据边界、审阅与恢复机制已稳定后启动。 |
 
 ## 实施原则
 
-1. **组件级直接迁移，不是视觉仿制。** `NovelOS-alpha` 是 Narraiva 产品与 UI 的源头。布局、样式、可移植交互状态和领域模型直接迁入；仅在 Electron、账户、云端、设备和本地文件桥接的位置切换为明确的 DSH adapter。
+1. **产品一致、实现边界清晰。** `NovelOS-alpha` 是 Narraiva 产品与 UI 的权威源头。当前 Public Alpha 按其布局、视觉 token、组件职责与交互哲学重新实现了独立的 DSH Browser Client；没有把 Electron、账户、云端、设备或私有引擎源码打入开源包。未来若直接复制可移植源码，必须先记录文件级来源与再许可依据。
 2. **先验证接口，再扩大 UI。** 第一个工程切片是 DSH Browser Client 运行时，而不是完整视觉重制。
 3. **本地优先、BYOK、最小发送。** 密钥仅由 DSH 管理；作品内容仅按用户可见的上下文清单直接发送给其配置的 DeepSeek 服务。
 4. **作者控制优先于自动化。** Ask 不写入；Write 只产生 Proposal；没有明确审阅与确认就不会更改稿件。
@@ -34,4 +34,4 @@ Ask、Write 和未来的 Full Access 是三个独立模式：
 
 ## 当前阶段
 
-阶段 4 已实现受控本地项目检索、可见证据清单和统一 Context Receipt。下一阶段是公开 Alpha 的安装、许可证、真实 Windows 流程与发布证据；Full Access 仍不实现。
+阶段 5 的代码与治理材料已完成。下一发布门槛是从 npm tarball 进行干净 Windows 安装并补齐真实 BYOK 人工流程证据；通过后发布 `v0.1.0-alpha.1` prerelease。Full Access 仍不实现。

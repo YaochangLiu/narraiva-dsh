@@ -1,61 +1,43 @@
 # Narraiva DSH
 
-Narraiva DSH is an open-source, local-first long-form fiction writing profile for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). It uses the author's own DeepSeek API key and does not connect to Narraiva Cloud APIs.
+Narraiva DSH is an open-source, local-first long-form fiction workspace built on the official plugin interfaces of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). It is an independent community project and is not endorsed by DeepSeek AI. Authors bring their own DeepSeek API key. Narraiva does not connect to Narraiva Cloud.
 
-## Phase 0 Browser Client Spike
+> Public Alpha: the writing safety model is implemented and tested, while DeepSeek Harness itself remains in developer preview and may introduce compatibility changes.
 
-The current Spike proves a small but intentional boundary:
+## What works
 
-- a separate Narraiva DSH profile/bundle;
-- a local unified `Narraiva Conversation` preset, with legacy Ask/Write presets retained for migration compatibility;
-- an author-control prompt policy;
-- no shell, generic filesystem, or direct manuscript-write tool in the writer preset.
-- a DSH Browser Client that visibly replaces the product workbench with Narraiva's light three-column writing shell.
+- A Narraiva-owned three-column writing UI inside the DSH Web surface.
+- Local project and chapter creation, editing, autosave, conflict detection, and restart recovery.
+- One continuous DSH conversation with **Ask** and **Write** behavior modes.
+- Ask with explicit current-document or selection context.
+- Write as a reviewable Proposal with inline Patch, accept/reject, Change Set, and undo.
+- Optional controlled project retrieval over author-granted `.md`, `.markdown`, and `.txt` files.
+- DeepSeek BYOK through DSH; no Narraiva account or cloud API.
 
-The workbench now includes local project persistence, Ask/Write conversation, and reviewable Proposal/Change Set flows. Storybase, Stylebase, project-wide retrieval, Full Access, and a production installer remain future work.
+Full Access, Storybase, and Stylebase are intentionally not part of this alpha.
 
-### Modes
+## Install
 
-Create a DSH conversation once, then change modes inside that same ordered history:
-
-- `Narraiva Ask` — questions, analysis, story diagnosis, and clarification. It does not generate ready-to-apply manuscript prose.
-- `Narraiva Write` — creates one reviewable Proposal with intent, scope, rationale, and proposed text. It never applies or saves that text.
-
-Both modes use the `narraiva-conversation` preset. The `思考` / `写作` controls change the versioned request protocol and response UI without changing the DSH session.
-
-## Local development
-
-Prerequisites:
-
-- Node.js 24 or later;
-- a built DeepSeek Harness source checkout. In this workspace it is `../_tools/deepseek-harness`;
-- a user-configured `DEEPSEEK_API_KEY` in DeepSeek Harness. Never put a key in this repository.
+Requirements: Windows 10/11, Node.js 24+, Chrome or Edge, and a DeepSeek API key configured in DSH.
 
 ```powershell
-cd D:\entertiment\katera\narraiva-dsh
-pnpm test
-pnpm run bootstrap
-pnpm run verify:profile
-pnpm run start:spike
+npm install -g @deepseek-ai/dsh @narraiva/dsh
+narraiva-dsh doctor
+narraiva-dsh start
 ```
 
-The first run adds this local package to the Harness profile `narraiva-web` and opens the Web surface at `http://127.0.0.1:3081`.
+Open `http://127.0.0.1:3081`. See [installation and troubleshooting](docs/INSTALLATION.md) for profiles, ports, source-checkout development, and compatibility.
 
-To use a different Harness checkout, set `DSH_SOURCE` before starting. To use a different Harness home, set `DSH_HOME` before bootstrapping. If the shell that runs pnpm does not select Node 24+, set `DSH_NODE` to its Node 24+ executable.
-The bootstrap command adds missing presets and preserves locally edited ones; use `pnpm run bootstrap -- --force` only when deliberately replacing them. The starter disables DSH telemetry by default for this local Spike.
+## Product boundary
 
-## Data boundary
+DSH owns model/provider configuration, the API key, sessions, transport, streaming, cancellation, and the native agent loop. Narraiva owns the writing UI, local project model, visible context receipts, and author-reviewed changes. Ask cannot write. Write cannot apply anything without author approval.
 
-Projects, sessions, and the DeepSeek credential are local to the user's Harness environment. Narraiva does not receive the API key, manuscript, Storybase, conversation, or telemetry. Text sent to a model is sent directly to the user's configured DeepSeek service.
+Read [architecture](docs/ARCHITECTURE.md), [data boundary](docs/DATA-BOUNDARY.md), and the [roadmap](docs/ROADMAP.md).
 
-## Planned slices
+## Contributing
 
-1. Local project workbench: direct portable Desktop component migration, project picker, chapter tree, editor, and local persistence.
-2. Ask conversation adapter: DSH session/preset binding, BYOK model conversation, explicit context manifest.
-3. Proposal/Diff: Write review, accept/reject, local revision history.
-4. Controlled local retrieval: implemented with project-root scanning, lexical ranking, visible evidence selection, and auditable receipts.
-5. Public Alpha packaging, followed by optional Storybase Lite and Stylebase experiments.
+Issues and pull requests are welcome for reproducible bugs, documentation, tests, accessibility, localization, DSH compatibility, and scoped product improvements. Read [CONTRIBUTING.md](CONTRIBUTING.md) before substantial work. Never attach private manuscripts or API keys.
 
-## License
+## License and marks
 
-The repository is intended to be public and open source. The final code license and Narraiva trademark policy must be chosen before the first public release.
+Code is available under the [MIT License](LICENSE). The Narraiva name and brand are governed separately by the [trademark policy](TRADEMARKS.md). See [privacy](PRIVACY.md), [security](SECURITY.md), and [third-party notices](THIRD_PARTY_NOTICES.md).

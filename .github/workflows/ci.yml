@@ -1,0 +1,30 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: node scripts/cli.mjs doctor
+      - run: node scripts/cli.mjs install --profile narraiva-ci
+        env:
+          DSH_HOME: ${{ runner.temp }}/narraiva-dsh-home
+      - run: pnpm run verify:profile
+        env:
+          DSH_HOME: ${{ runner.temp }}/narraiva-dsh-home
+          DSH_PROFILE: narraiva-ci
+      - run: npm pack --dry-run

@@ -1,0 +1,29 @@
+name: Feature request
+description: Propose a focused improvement consistent with author control.
+title: "[Feature]: "
+labels: ["needs-triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Author problem
+      description: What writing problem exists today, and for whom?
+    validations: { required: true }
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe behavior rather than an implementation mandate.
+    validations: { required: true }
+  - type: dropdown
+    id: boundary
+    attributes:
+      label: Primary boundary
+      options: [Ask, Write and Proposal review, Local project, Retrieval, DSH compatibility, Documentation]
+    validations: { required: true }
+  - type: textarea
+    id: safety
+    attributes:
+      label: Author-control and privacy impact
+      description: Could this read, send, or write more content or grant new tools?
+    validations: { required: true }

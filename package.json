@@ -1,9 +1,16 @@
 {
   "name": "@narraiva/dsh",
-  "version": "0.0.1",
-  "private": true,
+  "version": "0.1.0-alpha.1",
+  "private": false,
   "description": "Narraiva local-first long-form writing profile for DeepSeek Harness",
   "type": "module",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/YaochangLiu/narraiva-dsh.git" },
+  "homepage": "https://github.com/YaochangLiu/narraiva-dsh#readme",
+  "bugs": { "url": "https://github.com/YaochangLiu/narraiva-dsh/issues" },
+  "keywords": ["deepseek", "dsh-plugin", "writing", "fiction", "local-first"],
+  "publishConfig": { "access": "public" },
+  "bin": { "narraiva-dsh": "./scripts/cli.mjs" },
   "packageManager": "pnpm@11.19.0",
   "exports": {
     ".": {
@@ -20,7 +27,17 @@
     "presets",
     "scripts",
     "cordis.patch.yml",
-    "README.md"
+    "README.md",
+    "LICENSE",
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "SECURITY.md",
+    "TRADEMARKS.md",
+    "PRIVACY.md",
+    "THIRD_PARTY_NOTICES.md",
+    "docs/INSTALLATION.md",
+    "docs/ARCHITECTURE.md",
+    "docs/DATA-BOUNDARY.md"
   ],
   "engines": {
     "node": ">=24.0.0"
@@ -32,8 +49,12 @@
     "pretest": "pnpm run build:client",
     "bootstrap": "node scripts/bootstrap-local-profile.mjs",
     "verify:profile": "node scripts/verify-profile-composition.mjs",
-    "start:spike": "node scripts/start-local-spike.mjs"
+    "start:spike": "node scripts/start-local-spike.mjs",
+    "doctor": "node scripts/cli.mjs doctor",
+    "start": "node scripts/cli.mjs start"
   },
+  "peerDependencies": { "@deepseek-ai/dsh": ">=0.1.0-rc.7 <0.2.0" },
+  "devDependencies": { "@deepseek-ai/dsh": "0.1.0-rc.7" },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"

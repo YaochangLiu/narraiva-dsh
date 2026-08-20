@@ -1,0 +1,25 @@
+name: Bug report
+description: Report a reproducible Narraiva DSH problem without private content.
+title: "[Bug]: "
+labels: ["needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: Never include API keys or unpublished manuscript text. Use a private security advisory for vulnerabilities.
+  - type: input
+    id: versions
+    attributes:
+      label: Environment
+      description: Narraiva DSH, DSH, Node, Windows, and browser versions.
+    validations: { required: true }
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction
+      description: Minimal redacted steps, expected result, and actual result.
+    validations: { required: true }
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted evidence
+      description: Logs or screenshots with credentials, names, paths, and manuscript content removed.

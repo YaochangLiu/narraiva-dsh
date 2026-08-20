@@ -3,14 +3,16 @@ import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { resolveDshRuntime } from './public-alpha.mjs'
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dshSource = process.env.DSH_SOURCE ?? path.resolve(repositoryRoot, '..', '_tools', 'deepseek-harness')
-const dshBin = path.join(dshSource, 'apps', 'cli', 'lib', 'bin.js')
+const sourceBin = path.join(dshSource, 'apps', 'cli', 'lib', 'bin.js')
+const dshBin = existsSync(sourceBin) ? sourceBin : resolveDshRuntime(repositoryRoot)?.bin
 const dshNode = process.env.DSH_NODE ?? process.execPath
 const profileName = process.env.DSH_PROFILE ?? 'narraiva-web'
 
-if (!existsSync(dshBin) || !existsSync(dshNode)) {
+if (!dshBin || !existsSync(dshBin) || !existsSync(dshNode)) {
   throw new Error('Set DSH_SOURCE and, if needed, DSH_NODE to a Node 24+ DeepSeek Harness runtime.')
 }
 
